@@ -100,3 +100,13 @@ export const createTRPCRouter = t.router;
  * are logged in.
  */
 export const publicProcedure = t.procedure;
+
+/**
+ * @see https://trpc.io/docs/v10/middlewares
+ */
+export const middleware = t.middleware;
+
+/**
+ * @see https://trpc.io/docs/v10/merging-routers
+ */
+export const mergeRouters = t.mergeRouters;
