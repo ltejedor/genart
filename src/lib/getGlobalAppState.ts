@@ -1,9 +1,10 @@
+import { GlobalAppState } from "@prisma/client";
 import { db } from "~/server/db";
 
-export default async function getGlobalAppState() {
-  const state = await db.globalAppState.findFirst();
+export default async function getGlobalAppState(): Promise<GlobalAppState> {
+  let state = await db.globalAppState.findFirst();
   if (!state) {
-    await db.globalAppState.create({
+    state = await db.globalAppState.create({
       data: {
         id: 1,
       },
