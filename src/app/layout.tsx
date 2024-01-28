@@ -4,6 +4,8 @@ import { Inter } from "next/font/google";
 import { cookies } from "next/headers";
 
 import { TRPCReactProvider } from "~/trpc/react";
+import APP_TITLE from "~/lib/APP_TITLE";
+import APP_DESCRIPTION from "~/lib/APP_DESCRIPTION";
 
 const inter = Inter({
   subsets: ["latin"],
@@ -11,8 +13,8 @@ const inter = Inter({
 });
 
 export const metadata = {
-  title: "",
-  description: "",
+  title: APP_TITLE,
+  description: APP_DESCRIPTION,
   icons: [{ rel: "icon", url: "/favicon.ico" }],
 };
 
