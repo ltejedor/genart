@@ -1,4 +1,5 @@
 import { GlobalAppState } from "@prisma/client";
+
 import { db } from "~/server/db";
 
 export default async function getGlobalAppState(): Promise<GlobalAppState> {

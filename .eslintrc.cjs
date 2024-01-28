@@ -30,6 +30,13 @@ const config = {
     ],
     "require-await": "off",
     "@typescript-eslint/require-await": "off",
+    "import/order": [
+      "warn",
+      {
+        "newlines-between": "always",
+        alphabetize: { order: "asc", caseInsensitive: true },
+      },
+    ],
   },
 };
 

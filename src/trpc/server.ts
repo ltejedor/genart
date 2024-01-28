@@ -5,8 +5,9 @@ import {
 } from "@trpc/client";
 import { cookies } from "next/headers";
 
-import { AppRouter } from "~/server/api/root";
 import { getUrl, transformer } from "./shared";
+
+import { AppRouter } from "~/server/api/root";
 
 export const api = createTRPCProxyClient<AppRouter>({
   transformer,
