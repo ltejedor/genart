@@ -11,6 +11,7 @@ const config = {
     "plugin:@typescript-eslint/stylistic-type-checked",
     "plugin:tailwindcss/recommended",
     "plugin:react-server-components/recommended",
+    "plugin:react/recommended",
   ],
   rules: {
     "@typescript-eslint/array-type": "off",
@@ -37,6 +38,7 @@ const config = {
         alphabetize: { order: "asc", caseInsensitive: true },
       },
     ],
+    "react/react-in-jsx-scope": "off",
   },
 };
 
