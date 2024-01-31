@@ -1,4 +1,4 @@
-import exampleProcedure from "~/procedures/exampleProcedure";
+import exampleProcedure from "~/server/api/procedures/exampleProcedure";
 import { createTRPCRouter } from "~/server/api/trpc";
 
 /**
