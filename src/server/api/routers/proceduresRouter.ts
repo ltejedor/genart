@@ -2,7 +2,7 @@
 // Changes you make manually will be overwritten
 // Re-generate this file by running `npx codapt@latest generate`
 
-import { createTRPCRouter } from "~/server/api/trpc";
+import { createTRPCRouter } from "@/server/api/trpc";
 
 const proceduresRouter = createTRPCRouter({
   // No procedures yet

@@ -1,5 +1,5 @@
-import proceduresRouter from "~/server/api/routers/proceduresRouter";
-import { createTRPCRouter, mergeRouters } from "~/server/api/trpc";
+import proceduresRouter from "@/server/api/routers/proceduresRouter";
+import { createTRPCRouter, mergeRouters } from "@/server/api/trpc";
 
 /**
  * This is the primary router for your server.

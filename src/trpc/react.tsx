@@ -7,7 +7,7 @@ import { useState } from "react";
 
 import { getUrl, transformer } from "./shared";
 
-import { AppRouter } from "~/server/api/root";
+import { AppRouter } from "@/server/api/root";
 
 export const api = createTRPCReact<AppRouter>();
 
