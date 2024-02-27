@@ -25,6 +25,7 @@
     "dotenv": "^16.3.1",
     "ethers": "^5.7.2",
     "next": "^14.0.0",
+    "nodemon": "^3.1.0",
     "react": "18.2.0",
     "react-cookie": "^6.1.1",
     "react-dom": "18.2.0",
