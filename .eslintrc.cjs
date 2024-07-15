@@ -1,42 +1,36 @@
 /** @type {import("eslint").Linter.Config} */
 const config = {
-  "parser": "@typescript-eslint/parser",
-  "parserOptions": {
-    "project": true
+  parser: "@typescript-eslint/parser",
+  parserOptions: {
+    project: true,
   },
-  "plugins": [
-    "@typescript-eslint"
-  ],
-  "extends": [
+  plugins: ["@typescript-eslint", "unused-imports"],
+  extends: [
     "next/core-web-vitals",
     "plugin:@typescript-eslint/recommended-type-checked",
-    "plugin:@typescript-eslint/stylistic-type-checked"
+    "plugin:@typescript-eslint/stylistic-type-checked",
+    "plugin:tailwindcss/recommended",
+    "plugin:react-server-components/recommended",
+    "plugin:react/recommended",
   ],
-  "rules": {
+  rules: {
     "@typescript-eslint/array-type": "off",
     "@typescript-eslint/consistent-type-definitions": "off",
-    "@typescript-eslint/consistent-type-imports": [
-      "warn",
-      {
-        "prefer": "type-imports",
-        "fixStyle": "inline-type-imports"
-      }
-    ],
-    "@typescript-eslint/no-unused-vars": [
-      "warn",
-      {
-        "argsIgnorePattern": "^_"
-      }
-    ],
+    "@typescript-eslint/consistent-type-imports": "off",
+    "@typescript-eslint/no-unused-vars": "off",
     "@typescript-eslint/require-await": "off",
+    "import/order": "off",
+    "react/react-in-jsx-scope": "off",
+    "prefer-const": "off",
+    "@typescript-eslint/prefer-nullish-coalescing": "off",
     "@typescript-eslint/no-misused-promises": [
       "error",
       {
-        "checksVoidReturn": {
-          "attributes": false
-        }
-      }
-    ]
-  }
-}
+        checksVoidReturn: {
+          attributes: false,
+        },
+      },
+    ],
+  },
+};
 module.exports = config;

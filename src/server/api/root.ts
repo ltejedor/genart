@@ -1,13 +1,14 @@
-import { postRouter } from "@/server/api/routers/post";
+import { exampleProcedure } from "@/server/api/procedures/exampleProcedure";
 import { createCallerFactory, createTRPCRouter } from "@/server/api/trpc";
 
 /**
  * This is the primary router for your server.
  *
- * All routers added in /api/routers should be manually added here.
+ * Procedures from api/procedures and subrouters from api/routers should be added here.
  */
 export const appRouter = createTRPCRouter({
-  post: postRouter,
+  exampleProcedure,
+  // add procedures and subrouters here
 });
 
 // export type definition of API
