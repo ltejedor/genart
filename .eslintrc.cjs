@@ -19,6 +19,7 @@ const config = {
     "@typescript-eslint/consistent-type-imports": "off",
     "@typescript-eslint/no-unused-vars": "off",
     "@typescript-eslint/require-await": "off",
+    "@typescript-eslint/no-inferrable-types": "off",
     "import/order": "off",
     "react/react-in-jsx-scope": "off",
     "prefer-const": "off",
