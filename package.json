@@ -38,6 +38,7 @@
     "zod": "^3.23.3"
   },
   "devDependencies": {
+    "@stylistic/eslint-plugin-js": "^2.3.0",
     "@types/eslint": "^8.56.2",
     "@types/node": "^20.11.20",
     "@types/react": "^18.2.57",

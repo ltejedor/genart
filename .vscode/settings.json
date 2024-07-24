@@ -9,6 +9,6 @@
   "typescript.preferences.importModuleSpecifier": "non-relative",
   "editor.formatOnSave": true,
   "editor.defaultFormatter": "esbenp.prettier-vscode",
-  "prettier.configPath": "prettier.config.mjs",
+  "prettier.configPath": "prettier.config.js",
   "editor.tabSize": 2
 }

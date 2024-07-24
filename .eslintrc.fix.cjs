@@ -15,6 +15,12 @@ const config = {
         prefer: "no-type-imports",
       },
     ],
+    "padding-line-between-statements": [
+      "warn",
+      { blankLine: "always", prev: "import", next: "*" },
+      { blankLine: "any", prev: "import", next: "import" },
+      { blankLine: "always", prev: "*", next: "export" },
+    ],
     "unused-imports/no-unused-imports": "warn",
   },
 };
