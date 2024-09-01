@@ -11,7 +11,10 @@
     "db:studio": "prisma studio",
     "dev": "next dev",
     "postinstall": "prisma generate",
-    "lint": "next lint",
+    "typecheck": "tsc --noEmit",
+    "lint": "eslint -c .eslintrc.cjs --max-warnings 0",
+    "lint:fix": "eslint --fix -c .eslintrc.fix.cjs --max-warnings 0",
+    "format": "prettier --write .",
     "start": "next start"
   },
   "dependencies": {
@@ -47,6 +50,7 @@
     "@typescript-eslint/parser": "^8.1.0",
     "eslint": "^8.57.0",
     "eslint-config-next": "^14.2.4",
+    "eslint-plugin-import": "^2.29.1",
     "eslint-plugin-react": "^7.35.0",
     "eslint-plugin-react-server-components": "^1.2.0",
     "eslint-plugin-tailwindcss": "^3.17.4",

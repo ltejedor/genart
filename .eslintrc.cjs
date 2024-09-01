@@ -4,11 +4,7 @@ const config = {
   parserOptions: {
     project: true,
   },
-  plugins: [
-    "@typescript-eslint",
-    "unused-imports",
-    "@stylistic/eslint-plugin-js",
-  ],
+  plugins: ["@typescript-eslint", "@stylistic/eslint-plugin-js"],
   extends: [
     "next/core-web-vitals",
     "plugin:@typescript-eslint/recommended-type-checked",
