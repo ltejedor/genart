@@ -4,7 +4,7 @@ const config = {
   parserOptions: {
     project: true,
   },
-  plugins: ["@typescript-eslint", "@stylistic/eslint-plugin-js"],
+  plugins: ["@typescript-eslint"],
   extends: [
     "next/core-web-vitals",
     "plugin:@typescript-eslint/recommended-type-checked",
@@ -23,6 +23,7 @@ const config = {
     "react/react-in-jsx-scope": "off",
     "prefer-const": "off",
     "@typescript-eslint/prefer-nullish-coalescing": "off",
+    "@typescript-eslint/prefer-optional-chain": "off",
     "@typescript-eslint/no-misused-promises": [
       "error",
       {

@@ -9,5 +9,12 @@
   "editor.formatOnSave": true,
   "editor.defaultFormatter": "esbenp.prettier-vscode",
   "prettier.configPath": "prettier.config.js",
-  "editor.tabSize": 2
+  "editor.tabSize": 2,
+  "eslint.workingDirectories": [
+    {
+      "mode": "auto"
+    }
+  ],
+  "files.insertFinalNewline": true,
+  "files.trimTrailingWhitespace": true
 }
