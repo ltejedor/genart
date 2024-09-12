@@ -6,13 +6,13 @@ generator client {
 }
 
 datasource db {
-  provider = "sqlite"
-  url      = "file:./db.sqlite"
+  provider = "postgresql"
+  url      = "postgresql://postgres:postgres@localhost/app"
 }
 
 model GlobalAppState {
   // for storing non-collection state of the application
   // every column should have a default value
   // do not remove this table
-  id        Int      @id @default(autoincrement())
+  id Int @id @default(autoincrement())
 }

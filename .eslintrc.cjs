@@ -16,30 +16,22 @@ const config = {
   rules: {
     "@typescript-eslint/array-type": "off",
     "@typescript-eslint/consistent-type-definitions": "off",
-    "@typescript-eslint/consistent-type-imports": [
-      "warn",
-      {
-        prefer: "no-type-imports",
-      },
-    ],
-    "@typescript-eslint/no-unused-vars": ["warn", { argsIgnorePattern: "^_" }],
-    "@typescript-eslint/no-misused-promises": [
-      2,
-      {
-        checksVoidReturn: { attributes: false },
-      },
-    ],
-    "require-await": "off",
+    "@typescript-eslint/consistent-type-imports": "off",
+    "@typescript-eslint/no-unused-vars": "off",
     "@typescript-eslint/require-await": "off",
-    "import/order": [
-      "warn",
+    "@typescript-eslint/no-inferrable-types": "off",
+    "react/react-in-jsx-scope": "off",
+    "prefer-const": "off",
+    "@typescript-eslint/prefer-nullish-coalescing": "off",
+    "@typescript-eslint/prefer-optional-chain": "off",
+    "@typescript-eslint/no-misused-promises": [
+      "error",
       {
-        "newlines-between": "always",
-        alphabetize: { order: "asc", caseInsensitive: true },
+        checksVoidReturn: {
+          attributes: false,
+        },
       },
     ],
-    "react/react-in-jsx-scope": "off",
   },
 };
-
 module.exports = config;
