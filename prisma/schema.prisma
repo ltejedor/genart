@@ -10,9 +10,10 @@ datasource db {
   url      = "postgresql://postgres:postgres@localhost/app"
 }
 
-model GlobalAppState {
-  // for storing non-collection state of the application
-  // every column should have a default value
-  // do not remove this table
+// Prisma doesn't allow having a schema with no models
+// remove this when you add real models
+model ExampleModel {
   id Int @id @default(autoincrement())
+  createdAt  DateTime @default(now())
+  someString String
 }

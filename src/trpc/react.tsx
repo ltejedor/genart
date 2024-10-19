@@ -7,9 +7,8 @@ import { inferRouterInputs, inferRouterOutputs } from "@trpc/server";
 import { useState } from "react";
 import SuperJSON from "superjson";
 
-import { createQueryClient } from "./query-client";
-
 import { AppRouter } from "@/server/api/root";
+import { createQueryClient } from "./query-client";
 
 let clientQueryClientSingleton: QueryClient | undefined = undefined;
 const getQueryClient = () => {

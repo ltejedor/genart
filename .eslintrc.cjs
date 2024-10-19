@@ -12,6 +12,7 @@ const config = {
     "plugin:tailwindcss/recommended",
     "plugin:react-server-components/recommended",
     "plugin:react/recommended",
+    "plugin:@tanstack/query/recommended",
   ],
   rules: {
     "@typescript-eslint/array-type": "off",
@@ -32,6 +33,7 @@ const config = {
         },
       },
     ],
+    "tailwindcss/classnames-order": "off",
   },
 };
 module.exports = config;

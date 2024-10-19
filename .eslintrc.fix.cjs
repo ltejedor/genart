@@ -1,15 +1,8 @@
 /** @type {import("eslint").Linter.Config} */
 const config = {
   extends: "./.eslintrc.cjs",
-  plugins: ["import", "unused-imports", "@stylistic/eslint-plugin-js"],
+  plugins: ["unused-imports", "@stylistic/eslint-plugin-js"],
   rules: {
-    "import/order": [
-      "warn",
-      {
-        "newlines-between": "always",
-        alphabetize: { order: "asc", caseInsensitive: true },
-      },
-    ],
     "@typescript-eslint/consistent-type-imports": [
       "warn",
       {
@@ -24,7 +17,7 @@ const config = {
       { blankLine: "any", prev: "export", next: "export" },
     ],
     "unused-imports/no-unused-imports": "warn",
+    "tailwindcss/classnames-order": "warn",
   },
 };
-
 module.exports = config;
