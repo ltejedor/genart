@@ -42,6 +42,8 @@ export async function GET(
       next: { revalidate: 0 }
     });
 
+    console.log(response)
+
     if (!response.ok) {
       const errorData = await response.json();
       console.error(`Error response from Replicate:`, errorData);
