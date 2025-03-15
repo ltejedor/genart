@@ -23,7 +23,7 @@ type PredictionResponse = {
 
 export function VectorGraphicsForm() {
   const [isGenerating, setIsGenerating] = useState(false);
-  const [generatedImage, setGeneratedImage] = useState<string | null>(null);
+  const [generatedImages, setGeneratedImages] = useState<string[]>([]);
   const [statusMessage, setStatusMessage] = useState<string>("");
   const [predictionId, setPredictionId] = useState<string | null>(null);
 
@@ -103,6 +103,7 @@ export function VectorGraphicsForm() {
     let attempts = 0;
     const maxAttempts = 180; // Up to 3 minutes of polling
     let delay = 1000; // Start with 1 second delay
+    let lastOutputLength = 0;
 
     // Poll until the prediction is complete or max attempts reached
     do {
@@ -119,10 +120,24 @@ export function VectorGraphicsForm() {
           throw new Error(prediction.error || "Prediction failed");
         }
 
-        // If we got a successful result, return it immediately
-        if (prediction.status === "succeeded" && prediction.output && prediction.output.length > 0) {
-          setStatusMessage("Image generation completed!");
-          return prediction;
+        // If we have output, update the images array with any new images
+        if (prediction.output && prediction.output.length > 0) {
+          // Only update if we have new images
+          if (prediction.output.length > lastOutputLength) {
+            setGeneratedImages(prediction.output);
+            lastOutputLength = prediction.output.length;
+            
+            // If we're still processing, update the status to show progress
+            if (prediction.status === "processing") {
+              setStatusMessage(`Generating images... ${prediction.output.length} generated so far`);
+            }
+          }
+          
+          // If we got a successful result, return it immediately
+          if (prediction.status === "succeeded") {
+            setStatusMessage("Image generation completed!");
+            return prediction;
+          }
         }
 
         // Dynamic backoff strategy
@@ -160,7 +175,7 @@ export function VectorGraphicsForm() {
 
   const onSubmit = async (data: FormValues) => {
     setIsGenerating(true);
-    setGeneratedImage(null);
+    setGeneratedImages([]);
     setStatusMessage("Starting generation...");
     setPredictionId(null);
 
@@ -177,12 +192,12 @@ export function VectorGraphicsForm() {
       // Poll for the prediction status
       const result = await pollPrediction(prediction.id);
 
-      // Update the toast and set the generated image
+      // Update the toast and set the generated images
       toast.dismiss(loadingToast);
 
       if (result.output && result.output.length > 0) {
-        setGeneratedImage(result.output[0]);
-        toast.success("Vector graphic generated successfully!");
+        setGeneratedImages(result.output);
+        toast.success("Vector graphics generated successfully!");
       } else {
         throw new Error("No output generated");
       }
@@ -209,8 +224,8 @@ export function VectorGraphicsForm() {
       setStatusMessage(`Current status: ${result.status}, Has output: ${!!result.output && result.output.length > 0}`);
 
       if (result.status === "succeeded" && result.output && result.output.length > 0) {
-        setGeneratedImage(result.output[0]);
-        toast.success("Vector graphic found!");
+        setGeneratedImages(result.output);
+        toast.success("Vector graphics found!");
       }
     } catch (error) {
       setStatusMessage(`Error checking status: ${error instanceof Error ? error.message : "Unknown error"}`);
@@ -261,7 +276,7 @@ export function VectorGraphicsForm() {
           <p className="font-medium">Status:</p>
           <p>{statusMessage}</p>
 
-          {predictionId && !generatedImage && (
+          {predictionId && !generatedImages.length && (
             <button
               onClick={checkStatus}
               className="mt-2 text-indigo-600 hover:text-indigo-800 text-sm font-medium"
@@ -272,15 +287,19 @@ export function VectorGraphicsForm() {
         </div>
       )}
 
-      {generatedImage && (
+      {generatedImages.length > 0 && (
         <div className="mt-6">
-          <h3 className="mb-2 text-lg font-medium">Generated Image</h3>
-          <div className="overflow-hidden rounded-lg border border-gray-300">
-            <img
-              src={generatedImage}
-              alt="Generated vector graphic"
-              className="w-full"
-            />
+          <h3 className="mb-2 text-lg font-medium">Generated Images ({generatedImages.length})</h3>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            {generatedImages.map((image, index) => (
+              <div key={index} className="overflow-hidden rounded-lg border border-gray-300">
+                <img
+                  src={image}
+                  alt={`Generated vector graphic ${index + 1}`}
+                  className="w-full"
+                />
+              </div>
+            ))}
           </div>
         </div>
       )}

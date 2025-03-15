@@ -42,7 +42,6 @@ export async function GET(
       next: { revalidate: 0 }
     });
 
-    console.log(response)
 
     if (!response.ok) {
       const errorData = await response.json();
@@ -54,6 +53,7 @@ export async function GET(
     }
 
     const data = await response.json();
+    console.log(data)
     console.log(`Prediction status: ${data.status}, ID: ${id}`);
 
     // Create a response with appropriate headers
