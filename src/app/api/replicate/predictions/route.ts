@@ -10,10 +10,23 @@ const replicate = new Replicate({
 
 interface RequestBody {
   prompt: string;
+  patches?: Array<{
+    src: string;
+    x: number;
+    y: number;
+  }>;
+  initial_positions?: Array<[string, number, number]>;
 }
 
 interface PredictionWithError extends Prediction {
   error?: string;
+}
+
+// Helper function to extract the image name from the src path
+function extractImageName(src: string): string {
+  // Extract just the filename from the path
+  const filename = src.split('/').pop() || '';
+  return filename;
 }
 
 export async function POST(request: Request) {
@@ -24,12 +37,24 @@ export async function POST(request: Request) {
   }
 
   try {
-    const { prompt }: RequestBody = await request.json() as RequestBody;
+    const { prompt, patches = [], initial_positions }: RequestBody = await request.json() as RequestBody;
 
     // Start prediction using the Replicate SDK
     const prediction = await replicate.predictions.create({
       version: "2f0207fe8c5953b0be5b1d2fee8f7975f00db7083783204d36f6e3c2a15b267c",
-      input: { prompt }
+      input: { 
+        prompt,
+        // Format patches data into initial_positions if available
+        ...(patches.length > 0 && { 
+          initial_positions: patches.map(patch => [
+            extractImageName(patch.src),
+            parseFloat(patch.x.toFixed(6)), // Ensure x is a float with proper precision
+            parseFloat(patch.y.toFixed(6))  // Ensure y is a float with proper precision
+          ])
+        }),
+        // Include initial_positions directly if provided
+        ...(initial_positions && { initial_positions })
+      }
     }) as PredictionWithError;
 
     if (prediction.error) {

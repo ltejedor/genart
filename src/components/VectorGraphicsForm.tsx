@@ -21,7 +21,27 @@ type PredictionResponse = {
   error?: string;
 };
 
-export function VectorGraphicsForm() {
+type VectorGraphicsFormProps = {
+  canvasData?: {
+    patches: Array<{
+      id: string;
+      patchId: string;
+      src: string;
+      x: number;
+      y: number;
+      isDragging: boolean;
+    }>;
+  };
+};
+
+// Helper function to extract the image name from the src path
+const extractImageName = (src: string): string => {
+  // Extract just the filename from the path
+  const filename = src.split('/').pop() || '';
+  return filename;
+};
+
+export function VectorGraphicsForm({ canvasData }: VectorGraphicsFormProps) {
   const [isGenerating, setIsGenerating] = useState(false);
   const [generatedImages, setGeneratedImages] = useState<string[]>([]);
   const [statusMessage, setStatusMessage] = useState<string>("");
@@ -41,6 +61,15 @@ export function VectorGraphicsForm() {
   // Function to create a prediction with error handling
   const createPrediction = async (prompt: string) => {
     try {
+      // Format patches data into initial_positions if available
+      const initial_positions = canvasData?.patches.map(patch => [
+        extractImageName(patch.src),
+        parseFloat(patch.x.toFixed(6)), // Ensure x is a float with proper precision
+        parseFloat(patch.y.toFixed(6))  // Ensure y is a float with proper precision
+      ]) || [];
+
+      console.log("Sending initial_positions:", initial_positions);
+
       const response = await fetch("/api/replicate/predictions", {
         method: "POST",
         headers: {
@@ -50,6 +79,7 @@ export function VectorGraphicsForm() {
         },
         body: JSON.stringify({
           prompt,
+          initial_positions
         }),
         cache: "no-store",
       });
@@ -261,6 +291,14 @@ export function VectorGraphicsForm() {
             <p className="mt-1 text-sm text-red-600">{errors.prompt.message}</p>
           )}
         </div>
+
+        {canvasData && canvasData.patches.length > 0 && (
+          <div className="rounded-md bg-blue-50 p-2 text-sm text-blue-700">
+            <p className="font-medium">Canvas Data</p>
+            <p>{canvasData.patches.length} patches will be included in the generation</p>
+            <p className="text-xs mt-1">Positions will be sent in the required format for AI processing</p>
+          </div>
+        )}
 
         <button
           type="submit"
