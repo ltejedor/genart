@@ -44,7 +44,7 @@ export async function POST(request: Request) {
       version: "5fd38f563b69ed7f38847e2eba8f14406196f6260c85d73e85655b815b274268",
       input: {
         prompt,
-        num_patches: 5,
+        num_patches: 50,
         // Format patches data into initial_positions if available
         ...(patches.length > 0 && {
           initial_positions: patches.map(patch => [
