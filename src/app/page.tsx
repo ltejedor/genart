@@ -6,9 +6,26 @@ import { CanvasEditor, type CanvasData } from "@/components/CanvasEditor";
 
 export default function Home() {
   const [canvasData, setCanvasData] = useState<CanvasData>({ patches: [] });
+  const [parsedPatches, setParsedPatches] = useState<Array<{
+    patch_id: number;
+    x: number;
+    y: number;
+    rotation?: number;
+    scale?: number;
+  }>>([]);
 
   const handleCanvasDataChange = (data: CanvasData) => {
     setCanvasData(data);
+  };
+
+  const handlePatchesVisualize = (patches: Array<{
+    patch_id: number;
+    x: number;
+    y: number;
+    rotation?: number;
+    scale?: number;
+  }>) => {
+    setParsedPatches(patches);
   };
 
   return (
@@ -18,11 +35,17 @@ export default function Home() {
         
         <div className="mb-8 w-full max-w-6xl grid grid-cols-1 lg:grid-cols-2 gap-8">
           <div>
-            <CanvasEditor onCanvasDataChange={handleCanvasDataChange} />
+            <CanvasEditor 
+              onCanvasDataChange={handleCanvasDataChange} 
+              parsedPatches={parsedPatches}
+            />
           </div>
           
           <div>
-            <VectorGraphicsForm canvasData={canvasData} />
+            <VectorGraphicsForm 
+              canvasData={canvasData} 
+              onPatchesVisualize={handlePatchesVisualize}
+            />
           </div>
         </div>
       </div>

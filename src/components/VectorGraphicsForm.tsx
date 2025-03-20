@@ -13,12 +13,24 @@ const formSchema = z.object({
 
 type FormValues = z.infer<typeof formSchema>;
 
+// Define a type for the image-JSON pairs returned by the API
+type ImageJsonPair = [string, string]; // [imageUrl, jsonUrl]
+
 // Define the prediction response types
 type PredictionResponse = {
   id: string;
   status: "starting" | "processing" | "succeeded" | "failed" | "canceled";
-  output?: string[] | null;
+  output?: Array<[string, string]> | null; // Now an array of [imageUrl, jsonUrl] pairs
   error?: string;
+};
+
+// Define the type for parsed patch data from JSON
+type ParsedPatch = {
+  patch_id: number;
+  x: number;
+  y: number;
+  rotation?: number;
+  scale?: number;
 };
 
 type VectorGraphicsFormProps = {
@@ -32,6 +44,7 @@ type VectorGraphicsFormProps = {
       isDragging: boolean;
     }>;
   };
+  onPatchesVisualize?: (patches: ParsedPatch[]) => void;
 };
 
 // Helper function to extract the image name from the src path
@@ -41,11 +54,13 @@ const extractImageName = (src: string): string => {
   return filename;
 };
 
-export function VectorGraphicsForm({ canvasData }: VectorGraphicsFormProps) {
+export function VectorGraphicsForm({ canvasData, onPatchesVisualize }: VectorGraphicsFormProps) {
   const [isGenerating, setIsGenerating] = useState(false);
-  const [generatedImages, setGeneratedImages] = useState<string[]>([]);
+  const [generatedResults, setGeneratedResults] = useState<ImageJsonPair[]>([]);
   const [statusMessage, setStatusMessage] = useState<string>("");
   const [predictionId, setPredictionId] = useState<string | null>(null);
+  const [parsedPatches, setParsedPatches] = useState<ParsedPatch[]>([]);
+  const [isVisualizing, setIsVisualizing] = useState(false);
 
   const {
     register,
@@ -127,6 +142,50 @@ export function VectorGraphicsForm({ canvasData }: VectorGraphicsFormProps) {
     }
   };
 
+  // Function to fetch and parse JSON data from a URL
+  const fetchAndParseJson = async (jsonUrl: string): Promise<ParsedPatch[]> => {
+    try {
+      const response = await fetch(jsonUrl);
+      if (!response.ok) {
+        throw new Error(`Failed to fetch JSON: ${response.statusText}`);
+      }
+
+      const jsonData = await response.json();
+
+      // Extract patch information from the JSON
+      // The exact structure depends on the API response format
+      // This is a placeholder implementation
+      let patches: ParsedPatch[] = [];
+
+      if (Array.isArray(jsonData)) {
+        // If the JSON is an array of patches
+        patches = jsonData.map(item => ({
+          patch_id: item.id,
+          x: item.x,
+          y: item.y,
+          rotation: item.rotation,
+          scale: item.scale
+        }));
+      } else if (jsonData.patches && Array.isArray(jsonData.patches)) {
+        // If the JSON has a patches array
+        patches = jsonData.patches.map(item => ({
+          patch_id: item.patch_id,
+          x: item.x,
+          y: item.y,
+          rotation: item.rotation,
+          scale: item.scale
+        }));
+      }
+
+      // Limit to the first 5 patches
+      return patches.slice(0, 5);
+    } catch (error) {
+      console.error("Error fetching or parsing JSON:", error);
+      toast.error("Failed to load patch data from JSON");
+      return [];
+    }
+  };
+
   // Function to poll for prediction status with better error handling and logging
   const pollPrediction = async (id: string) => {
     let prediction: PredictionResponse;
@@ -150,22 +209,41 @@ export function VectorGraphicsForm({ canvasData }: VectorGraphicsFormProps) {
           throw new Error(prediction.error || "Prediction failed");
         }
 
-        // If we have output, update the images array with any new images
+        // If we have output, update the results array with any new data
         if (prediction.output && prediction.output.length > 0) {
-          // Only update if we have new images
+          // Only update if we have new results
           if (prediction.output.length > lastOutputLength) {
-            setGeneratedImages(prediction.output);
+            setGeneratedResults(prediction.output);
             lastOutputLength = prediction.output.length;
-            
+
             // If we're still processing, update the status to show progress
             if (prediction.status === "processing") {
-              setStatusMessage(`Generating images... ${prediction.output.length} generated so far`);
+              setStatusMessage(`Generating vector graphics... ${prediction.output.length} results generated so far`);
             }
           }
-          
+
           // If we got a successful result, return it immediately
           if (prediction.status === "succeeded") {
-            setStatusMessage("Image generation completed!");
+            setStatusMessage("Vector graphics generation completed!");
+
+            // If we have results and onPatchesVisualize is provided, process the first JSON
+            if (prediction.output.length > 0 && onPatchesVisualize) {
+              const [_, jsonUrl] = prediction.output[0]; // Get the first result's JSON URL
+              setIsVisualizing(true);
+              try {
+                const patches = await fetchAndParseJson(jsonUrl);
+                setParsedPatches(patches);
+                if (patches.length > 0) {
+                  onPatchesVisualize(patches);
+                  toast.success(`Visualizing ${patches.length} patches on canvas`);
+                }
+              } catch (error) {
+                console.error("Error visualizing patches:", error);
+              } finally {
+                setIsVisualizing(false);
+              }
+            }
+
             return prediction;
           }
         }
@@ -205,7 +283,7 @@ export function VectorGraphicsForm({ canvasData }: VectorGraphicsFormProps) {
 
   const onSubmit = async (data: FormValues) => {
     setIsGenerating(true);
-    setGeneratedImages([]);
+    setGeneratedResults([]);
     setStatusMessage("Starting generation...");
     setPredictionId(null);
 
@@ -226,7 +304,7 @@ export function VectorGraphicsForm({ canvasData }: VectorGraphicsFormProps) {
       toast.dismiss(loadingToast);
 
       if (result.output && result.output.length > 0) {
-        setGeneratedImages(result.output);
+        setGeneratedResults(result.output);
         toast.success("Vector graphics generated successfully!");
       } else {
         throw new Error("No output generated");
@@ -254,7 +332,7 @@ export function VectorGraphicsForm({ canvasData }: VectorGraphicsFormProps) {
       setStatusMessage(`Current status: ${result.status}, Has output: ${!!result.output && result.output.length > 0}`);
 
       if (result.status === "succeeded" && result.output && result.output.length > 0) {
-        setGeneratedImages(result.output);
+        setGeneratedResults(result.output);
         toast.success("Vector graphics found!");
       }
     } catch (error) {
@@ -314,7 +392,7 @@ export function VectorGraphicsForm({ canvasData }: VectorGraphicsFormProps) {
           <p className="font-medium">Status:</p>
           <p>{statusMessage}</p>
 
-          {predictionId && !generatedImages.length && (
+          {predictionId && !generatedResults.length && (
             <button
               onClick={checkStatus}
               className="mt-2 text-indigo-600 hover:text-indigo-800 text-sm font-medium"
@@ -325,19 +403,65 @@ export function VectorGraphicsForm({ canvasData }: VectorGraphicsFormProps) {
         </div>
       )}
 
-      {generatedImages.length > 0 && (
+      {parsedPatches.length > 0 && (
+        <div className="mt-4 p-2 bg-green-50 rounded-md text-sm text-green-700">
+          <p className="font-medium">Patches Visualized:</p>
+          <p>{parsedPatches.length} patches placed on canvas</p>
+        </div>
+      )}
+
+      {generatedResults.length > 0 && (
         <div className="mt-6">
-          <h3 className="mb-2 text-lg font-medium">Generated Images ({generatedImages.length})</h3>
+          <h3 className="mb-2 text-lg font-medium">Generated Results ({generatedResults.length})</h3>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            {generatedImages.map((image, index) => (
-              <div key={index} className="overflow-hidden rounded-lg border border-gray-300">
-                <img
-                  src={image}
-                  alt={`Generated vector graphic ${index + 1}`}
-                  className="w-full"
-                />
-              </div>
-            ))}
+            {generatedResults.map((pair, index) => {
+              const [imageUrl, jsonUrl] = pair;
+              return (
+                <div key={index} className="overflow-hidden rounded-lg border border-gray-300">
+                  <img
+                    src={imageUrl}
+                    alt={`Generated vector graphic ${index + 1}`}
+                    className="w-full"
+                  />
+                  <div className="p-2 bg-gray-50 border-t border-gray-300 flex justify-between items-center">
+                    <a
+                      href={jsonUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-xs text-blue-600 hover:text-blue-800"
+                    >
+                      View JSON data
+                    </a>
+                    {onPatchesVisualize && (
+                      <button
+                        onClick={async () => {
+                          setIsVisualizing(true);
+                          try {
+                            const patches = await fetchAndParseJson(jsonUrl);
+                            setParsedPatches(patches);
+                            if (patches.length > 0) {
+                              onPatchesVisualize(patches);
+                              toast.success(`Visualizing ${patches.length} patches on canvas`);
+                            } else {
+                              toast.error("No patch data found to visualize");
+                            }
+                          } catch (error) {
+                            console.error("Error visualizing patches:", error);
+                            toast.error("Failed to visualize patches");
+                          } finally {
+                            setIsVisualizing(false);
+                          }
+                        }}
+                        disabled={isVisualizing}
+                        className="text-xs bg-indigo-100 text-indigo-700 px-2 py-1 rounded hover:bg-indigo-200 disabled:opacity-50"
+                      >
+                        {isVisualizing ? "Visualizing..." : "Visualize Patches"}
+                      </button>
+                    )}
+                  </div>
+                </div>
+              );
+            })}
           </div>
         </div>
       )}

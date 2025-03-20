@@ -10,9 +10,16 @@ export type CanvasData = {
 
 type CanvasEditorProps = {
   onCanvasDataChange: (data: CanvasData) => void;
+  parsedPatches?: Array<{
+    patch_id: number;
+    x: number;
+    y: number;
+    rotation?: number;
+    scale?: number;
+  }>;
 };
 
-export function CanvasEditor({ onCanvasDataChange }: CanvasEditorProps) {
+export function CanvasEditor({ onCanvasDataChange, parsedPatches }: CanvasEditorProps) {
   const [placedPatches, setPlacedPatches] = useState<PlacedPatch[]>([]);
   
   // Handle patch selection from the library
@@ -47,7 +54,10 @@ export function CanvasEditor({ onCanvasDataChange }: CanvasEditorProps) {
         </p>
       </div>
       
-      <InteractiveCanvas onPatchesChange={handlePatchesChange} />
+      <InteractiveCanvas 
+        onPatchesChange={handlePatchesChange} 
+        parsedPatches={parsedPatches} 
+      />
       
       <PatchLibrary onPatchSelect={handlePatchSelect} />
     </div>

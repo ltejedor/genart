@@ -13,13 +13,22 @@ export type PlacedPatch = {
   x: number;
   y: number;
   isDragging: boolean;
+  rotation?: number;
+  scale?: number;
 };
 
 type InteractiveCanvasProps = {
   onPatchesChange: (patches: PlacedPatch[]) => void;
+  parsedPatches?: Array<{
+    patch_id: number;
+    x: number;
+    y: number;
+    rotation?: number;
+    scale?: number;
+  }>;
 };
 
-export function InteractiveCanvas({ onPatchesChange }: InteractiveCanvasProps) {
+export function InteractiveCanvas({ onPatchesChange, parsedPatches }: InteractiveCanvasProps) {
   const [stageSize, setStageSize] = useState({ width: 500, height: 500 });
   const [placedPatches, setPlacedPatches] = useState<PlacedPatch[]>([]);
   const [images, setImages] = useState<Record<string, HTMLImageElement>>({});
@@ -49,6 +58,50 @@ export function InteractiveCanvas({ onPatchesChange }: InteractiveCanvasProps) {
   useEffect(() => {
     onPatchesChange(placedPatches);
   }, [placedPatches, onPatchesChange]);
+
+  // Handle parsed patches from API response
+  useEffect(() => {
+    if (!parsedPatches || parsedPatches.length === 0) return;
+    
+    // Clear existing patches if needed
+    // setPlacedPatches([]);
+    
+    // Process each parsed patch (up to 5)
+    const patchesToAdd = parsedPatches.slice(0, 5).map(patch => {
+      // Convert patch_id to the corresponding image path
+      const patchId = String(patch.patch_id);
+      const src = `/animals/image_${patchId}.png`;
+      
+      // Create a new placed patch with the parsed data
+      return {
+        id: `api-placed-${patchId}-${Date.now()}`,
+        patchId: patchId,
+        src: src,
+        x: patch.x, // Already in -1 to 1 coordinate system
+        y: patch.y, // Already in -1 to 1 coordinate system
+        isDragging: false,
+        rotation: patch.rotation || 0,
+        scale: patch.scale || 1
+      };
+    });
+    
+    // Load images for the patches
+    patchesToAdd.forEach(patch => {
+      if (!images[patch.src]) {
+        const img = new window.Image();
+        img.src = patch.src;
+        img.onload = () => {
+          setImages(prev => ({ ...prev, [patch.src]: img }));
+        };
+        img.onerror = () => {
+          console.error(`Failed to load image: ${patch.src}`);
+        };
+      }
+    });
+    
+    // Add the new patches to the canvas
+    setPlacedPatches(prev => [...patchesToAdd]);
+  }, [parsedPatches]);
 
   // Convert canvas coordinates to the -1 to 1 coordinate system
   const canvasToCoord = (pos: number, size: number): number => {
@@ -237,6 +290,7 @@ export function InteractiveCanvas({ onPatchesChange }: InteractiveCanvasProps) {
                   x={x}
                   y={y}
                   draggable
+                  rotation={patch.rotation || 0}
                   onDragStart={() => handleDragStart(patch.id)}
                   onDragEnd={(e) => handleDragEnd(patch.id, e.target.x(), e.target.y())}
                   onClick={() => removePatch(patch.id)}
@@ -244,10 +298,10 @@ export function InteractiveCanvas({ onPatchesChange }: InteractiveCanvasProps) {
                 >
                   <KonvaImage
                     image={img}
-                    width={img.width * scale}
-                    height={img.height * scale}
-                    offsetX={img.width * scale / 2}
-                    offsetY={img.height * scale / 2}
+                    width={img.width * scale * (patch.scale || 1)}
+                    height={img.height * scale * (patch.scale || 1)}
+                    offsetX={img.width * scale * (patch.scale || 1) / 2}
+                    offsetY={img.height * scale * (patch.scale || 1) / 2}
                     opacity={patch.isDragging ? 0.7 : 1}
                     shadowColor="black"
                     shadowBlur={patch.isDragging ? 10 : 0}

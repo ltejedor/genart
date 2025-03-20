@@ -41,11 +41,12 @@ export async function POST(request: Request) {
 
     // Start prediction using the Replicate SDK
     const prediction = await replicate.predictions.create({
-      version: "2f0207fe8c5953b0be5b1d2fee8f7975f00db7083783204d36f6e3c2a15b267c",
-      input: { 
+      version: "5fd38f563b69ed7f38847e2eba8f14406196f6260c85d73e85655b815b274268",
+      input: {
         prompt,
+        num_patches: 5,
         // Format patches data into initial_positions if available
-        ...(patches.length > 0 && { 
+        ...(patches.length > 0 && {
           initial_positions: patches.map(patch => [
             extractImageName(patch.src),
             parseFloat(patch.x.toFixed(6)), // Ensure x is a float with proper precision
