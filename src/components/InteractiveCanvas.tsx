@@ -104,13 +104,19 @@ export function InteractiveCanvas({ onPatchesChange, parsedPatches }: Interactiv
   }, [parsedPatches]);
 
   // Convert canvas coordinates to the -1 to 1 coordinate system
-  const canvasToCoord = (pos: number, size: number): number => {
-    return (pos / (size / 2)) - 1;
+  const canvasToCoord = (pos: number, size: number, isYAxis: boolean = false): number => {
+    // Map from canvas position (0 to size) to -1 to 1 coordinate system
+    // For both axes, we need to flip the coordinates
+    const normalizedPos = (pos / size) * 2; // Convert to 0-2 range
+    return -1 * (normalizedPos - 1); // Convert to -1 to 1 range and flip
   };
 
   // Convert -1 to 1 coordinates to canvas coordinates
-  const coordToCanvas = (coord: number, size: number): number => {
-    return (coord + 1) * (size / 2);
+  const coordToCanvas = (coord: number, size: number, isYAxis: boolean = false): number => {
+    // Map from -1 to 1 coordinate system to canvas position (0 to size)
+    // For both axes, we need to flip the coordinates
+    const flippedCoord = -1 * coord; // Flip the coordinate
+    return ((flippedCoord + 1) / 2) * size; // Convert to 0-size range
   };
 
   // Add a new patch to the canvas
@@ -129,8 +135,8 @@ export function InteractiveCanvas({ onPatchesChange, parsedPatches }: Interactiv
       id: `placed-${patch.id}-${Date.now()}`,
       patchId: patch.id,
       src: patch.src,
-      x: canvasToCoord(x, stageSize.width),
-      y: canvasToCoord(y, stageSize.height),
+      x: canvasToCoord(x, stageSize.width, false),
+      y: canvasToCoord(y, stageSize.height, true),
       isDragging: false,
     };
 
@@ -155,8 +161,8 @@ export function InteractiveCanvas({ onPatchesChange, parsedPatches }: Interactiv
         if (p.id !== id) return p;
         
         // Convert canvas position to -1 to 1 coordinates
-        const coordX = canvasToCoord(x, stageSize.width);
-        const coordY = canvasToCoord(y, stageSize.height);
+        const coordX = canvasToCoord(x, stageSize.width, false);
+        const coordY = canvasToCoord(y, stageSize.height, true);
         
         // Clamp coordinates to stay within -1 to 1 range
         const clampedX = Math.max(-1, Math.min(1, coordX));
@@ -277,8 +283,8 @@ export function InteractiveCanvas({ onPatchesChange, parsedPatches }: Interactiv
               if (!img) return null;
               
               // Convert -1 to 1 coordinates to canvas coordinates
-              const x = coordToCanvas(patch.x, stageSize.width);
-              const y = coordToCanvas(patch.y, stageSize.height);
+              const x = coordToCanvas(patch.x, stageSize.width, false);
+              const y = coordToCanvas(patch.y, stageSize.height, true);
               
               // Calculate image size (scaled down to fit nicely on canvas)
               const maxSize = Math.min(stageSize.width, stageSize.height) / 5;
@@ -290,7 +296,7 @@ export function InteractiveCanvas({ onPatchesChange, parsedPatches }: Interactiv
                   x={x}
                   y={y}
                   draggable
-                  rotation={patch.rotation || 0}
+                  rotation={patch.rotation ? -patch.rotation : 0} // Negate rotation to account for flipped coordinates
                   onDragStart={() => handleDragStart(patch.id)}
                   onDragEnd={(e) => handleDragEnd(patch.id, e.target.x(), e.target.y())}
                   onClick={() => removePatch(patch.id)}
