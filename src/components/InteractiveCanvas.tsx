@@ -21,6 +21,7 @@ type InteractiveCanvasProps = {
   onPatchesChange: (patches: PlacedPatch[]) => void;
   parsedPatches?: Array<{
     patch_id: number;
+    img_index: number;
     x: number;
     y: number;
     rotation?: number;
@@ -62,16 +63,16 @@ export function InteractiveCanvas({ onPatchesChange, parsedPatches }: Interactiv
   // Handle parsed patches from API response
   useEffect(() => {
     if (!parsedPatches || parsedPatches.length === 0) return;
-    
+
     // Clear existing patches if needed
     // setPlacedPatches([]);
-    
-    // Process each parsed patch (up to 5)
-    const patchesToAdd = parsedPatches.slice(0, 5).map(patch => {
+
+    // Process each parsed patch
+    const patchesToAdd = parsedPatches.map(patch => {
       // Convert patch_id to the corresponding image path
       const patchId = String(patch.patch_id);
-      const src = `/animals/image_${patchId}.png`;
-      
+      const src = `/animals/image_${patch.img_index}.png`;
+
       // Create a new placed patch with the parsed data
       return {
         id: `api-placed-${patchId}-${Date.now()}`,
@@ -84,7 +85,7 @@ export function InteractiveCanvas({ onPatchesChange, parsedPatches }: Interactiv
         scale: patch.scale || 1
       };
     });
-    
+
     // Load images for the patches
     patchesToAdd.forEach(patch => {
       if (!images[patch.src]) {
@@ -98,7 +99,7 @@ export function InteractiveCanvas({ onPatchesChange, parsedPatches }: Interactiv
         };
       }
     });
-    
+
     // Add the new patches to the canvas
     setPlacedPatches(prev => [...patchesToAdd]);
   }, [parsedPatches]);
@@ -159,15 +160,15 @@ export function InteractiveCanvas({ onPatchesChange, parsedPatches }: Interactiv
     setPlacedPatches(prev =>
       prev.map(p => {
         if (p.id !== id) return p;
-        
+
         // Convert canvas position to -1 to 1 coordinates
         const coordX = canvasToCoord(x, stageSize.width, false);
         const coordY = canvasToCoord(y, stageSize.height, true);
-        
+
         // Clamp coordinates to stay within -1 to 1 range
         const clampedX = Math.max(-1, Math.min(1, coordX));
         const clampedY = Math.max(-1, Math.min(1, coordY));
-        
+
         return {
           ...p,
           x: clampedX,
@@ -181,15 +182,15 @@ export function InteractiveCanvas({ onPatchesChange, parsedPatches }: Interactiv
   // Handle dropping a patch from the library onto the canvas
   const handleDrop = (e: React.DragEvent<HTMLDivElement>) => {
     e.preventDefault();
-    
+
     // Get the drop position relative to the stage
     const stageContainer = stageRef.current?.container();
     if (!stageContainer) return;
-    
+
     const stageRect = stageContainer.getBoundingClientRect();
     const x = e.clientX - stageRect.left;
     const y = e.clientY - stageRect.top;
-    
+
     // Get the patch data from the drag event
     try {
       const patchData = JSON.parse(e.dataTransfer.getData("application/json")) as Patch;
@@ -213,16 +214,16 @@ export function InteractiveCanvas({ onPatchesChange, parsedPatches }: Interactiv
   return (
     <div className="w-full space-y-4">
       <h3 className="text-lg font-medium">Canvas</h3>
-      
-      <div 
+
+      <div
         ref={containerRef}
         className="relative rounded-md border border-gray-300 bg-white"
         onDrop={handleDrop}
         onDragOver={handleDragOver}
       >
-        <Stage 
+        <Stage
           ref={stageRef}
-          width={stageSize.width} 
+          width={stageSize.width}
           height={stageSize.height}
         >
           <Layer>
@@ -234,7 +235,7 @@ export function InteractiveCanvas({ onPatchesChange, parsedPatches }: Interactiv
               height={stageSize.height}
               fill="#f9fafb"
             />
-            
+
             {/* Grid lines */}
             <Line
               points={[stageSize.width / 2, 0, stageSize.width / 2, stageSize.height]}
@@ -246,7 +247,7 @@ export function InteractiveCanvas({ onPatchesChange, parsedPatches }: Interactiv
               stroke="#e5e7eb"
               strokeWidth={1}
             />
-            
+
             {/* Coordinate labels */}
             <Text
               x={stageSize.width - 20}
@@ -276,20 +277,20 @@ export function InteractiveCanvas({ onPatchesChange, parsedPatches }: Interactiv
               fontSize={12}
               fill="#6b7280"
             />
-            
+
             {/* Placed patches */}
             {placedPatches.map((patch) => {
               const img = images[patch.src];
               if (!img) return null;
-              
+
               // Convert -1 to 1 coordinates to canvas coordinates
               const x = coordToCanvas(patch.x, stageSize.width, false);
               const y = coordToCanvas(patch.y, stageSize.height, true);
-              
+
               // Calculate image size (scaled down to fit nicely on canvas)
               const maxSize = Math.min(stageSize.width, stageSize.height) / 5;
               const scale = Math.min(maxSize / img.width, maxSize / img.height);
-              
+
               return (
                 <Group
                   key={patch.id}
@@ -318,7 +319,7 @@ export function InteractiveCanvas({ onPatchesChange, parsedPatches }: Interactiv
             })}
           </Layer>
         </Stage>
-        
+
         <div className="absolute bottom-2 right-2">
           <button
             onClick={() => setPlacedPatches([])}
@@ -328,7 +329,7 @@ export function InteractiveCanvas({ onPatchesChange, parsedPatches }: Interactiv
           </button>
         </div>
       </div>
-      
+
       <p className="text-xs text-gray-500">
         Click on a patch to remove it. Drag patches to reposition them.
       </p>

@@ -9,6 +9,7 @@ import toast from "react-hot-toast";
 // Define the form schema using zod
 const formSchema = z.object({
   prompt: z.string().min(1, "Prompt is required"),
+  numPatches: z.number().int().min(1).max(250).default(5),
 });
 
 type FormValues = z.infer<typeof formSchema>;
@@ -27,6 +28,7 @@ type PredictionResponse = {
 // Define the type for parsed patch data from JSON
 type ParsedPatch = {
   patch_id: number;
+  img_index: number;
   x: number;
   y: number;
   rotation?: number;
@@ -70,11 +72,12 @@ export function VectorGraphicsForm({ canvasData, onPatchesVisualize }: VectorGra
     resolver: zodResolver(formSchema),
     defaultValues: {
       prompt: "",
+      numPatches: 5,
     },
   });
 
   // Function to create a prediction with error handling
-  const createPrediction = async (prompt: string) => {
+  const createPrediction = async (prompt: string, numPatches: number) => {
     try {
       // Format patches data into initial_positions if available
       const initial_positions = canvasData?.patches.map(patch => [
@@ -83,7 +86,8 @@ export function VectorGraphicsForm({ canvasData, onPatchesVisualize }: VectorGra
         parseFloat(patch.y.toFixed(6))  // Ensure y is a float with proper precision
       ]) || [];
 
-      console.log("Sending initial_positions:", initial_positions);
+      // Log the initial positions for debugging
+      console.log(`Sending ${initial_positions.length} initial positions:`, initial_positions);
 
       const response = await fetch("/api/replicate/predictions", {
         method: "POST",
@@ -94,6 +98,7 @@ export function VectorGraphicsForm({ canvasData, onPatchesVisualize }: VectorGra
         },
         body: JSON.stringify({
           prompt,
+          numPatches,
           initial_positions
         }),
         cache: "no-store",
@@ -157,28 +162,20 @@ export function VectorGraphicsForm({ canvasData, onPatchesVisualize }: VectorGra
       // This is a placeholder implementation
       let patches: ParsedPatch[] = [];
 
-      if (Array.isArray(jsonData)) {
-        // If the JSON is an array of patches
-        patches = jsonData.map(item => ({
-          patch_id: item.id,
-          x: item.x,
-          y: item.y,
-          rotation: item.rotation,
-          scale: item.scale
-        }));
-      } else if (jsonData.patches && Array.isArray(jsonData.patches)) {
-        // If the JSON has a patches array
-        patches = jsonData.patches.map(item => ({
-          patch_id: item.patch_id,
-          x: item.x,
-          y: item.y,
-          rotation: item.rotation,
-          scale: item.scale
-        }));
-      }
 
-      // Limit to the first 5 patches
-      return patches.slice(0, 5);
+      console.log(jsonData)
+      // If the JSON is an array of patches
+      patches = jsonData.map(item => ({
+        patch_id: item.id,
+        img_index: item.patch_index,
+        x: item.x,
+        y: item.y,
+        rotation: item.rotation,
+        scale: item.scale
+      }));
+
+     console.log(patches)
+      return patches;
     } catch (error) {
       console.error("Error fetching or parsing JSON:", error);
       toast.error("Failed to load patch data from JSON");
@@ -292,10 +289,14 @@ export function VectorGraphicsForm({ canvasData, onPatchesVisualize }: VectorGra
       const loadingToast = toast.loading("Generating vector graphic...");
 
       // Create the prediction
-      const prediction = await createPrediction(data.prompt);
+      const prediction = await createPrediction(data.prompt, data.numPatches);
       setPredictionId(prediction.id);
 
-      setStatusMessage(`Created prediction with ID: ${prediction.id}. Waiting for processing...`);
+      setStatusMessage(`Created prediction with ID: ${prediction.id}. ${
+        canvasData?.patches.length ?
+        `Including ${canvasData.patches.length} initial patch positions. ` :
+        ''
+      }Waiting for processing...`);
 
       // Poll for the prediction status
       const result = await pollPrediction(prediction.id);
@@ -370,11 +371,36 @@ export function VectorGraphicsForm({ canvasData, onPatchesVisualize }: VectorGra
           )}
         </div>
 
+        <div>
+          <label
+            htmlFor="numPatches"
+            className="block text-sm font-medium text-gray-700"
+          >
+            Number of Patches (1-250)
+          </label>
+          <input
+            id="numPatches"
+            type="number"
+            min="1"
+            max="250"
+            className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-indigo-500"
+            {...register("numPatches", {
+              valueAsNumber: true,
+              min: { value: 1, message: "Minimum 1 patch" },
+              max: { value: 250, message: "Maximum 250 patches" }
+            })}
+            disabled={isGenerating}
+          />
+          {errors.numPatches && (
+            <p className="mt-1 text-sm text-red-600">{errors.numPatches.message}</p>
+          )}
+        </div>
+
         {canvasData && canvasData.patches.length > 0 && (
           <div className="rounded-md bg-blue-50 p-2 text-sm text-blue-700">
             <p className="font-medium">Canvas Data</p>
             <p>{canvasData.patches.length} patches will be included in the generation</p>
-            <p className="text-xs mt-1">Positions will be sent in the required format for AI processing</p>
+            <p className="text-xs mt-1">Patch positions will be sent to the AI model to influence the generated result</p>
           </div>
         )}
 

@@ -10,6 +10,7 @@ const replicate = new Replicate({
 
 interface RequestBody {
   prompt: string;
+  numPatches?: number;
   patches?: Array<{
     src: string;
     x: number;
@@ -37,24 +38,30 @@ export async function POST(request: Request) {
   }
 
   try {
-    const { prompt, patches = [], initial_positions }: RequestBody = await request.json() as RequestBody;
+    const { prompt, numPatches = 5, patches = [], initial_positions }: RequestBody = await request.json() as RequestBody;
+
+    // Validate numPatches is within reasonable limits
+    const validatedNumPatches = Math.min(Math.max(1, numPatches), 250);
+
+    // Determine the initial positions to use
+    // Prioritize the initial_positions parameter if provided
+    const formattedInitialPositions = initial_positions || (patches.length > 0
+      ? patches.map(patch => [
+          extractImageName(patch.src),
+          parseFloat(patch.x.toFixed(6)), // Ensure x is a float with proper precision
+          parseFloat(patch.y.toFixed(6))  // Ensure y is a float with proper precision
+        ])
+      : undefined);
+
+    console.log("Using initial positions:", formattedInitialPositions);
 
     // Start prediction using the Replicate SDK
     const prediction = await replicate.predictions.create({
-      version: "5fd38f563b69ed7f38847e2eba8f14406196f6260c85d73e85655b815b274268",
+      version: "5422a76a83a9d965773201bb7ff2c78791a5b05095565e5ec8d48d29324e9140",
       input: {
         prompt,
-        num_patches: 5,
-        // Format patches data into initial_positions if available
-        ...(patches.length > 0 && {
-          initial_positions: patches.map(patch => [
-            extractImageName(patch.src),
-            parseFloat(patch.x.toFixed(6)), // Ensure x is a float with proper precision
-            parseFloat(patch.y.toFixed(6))  // Ensure y is a float with proper precision
-          ])
-        }),
-        // Include initial_positions directly if provided
-        ...(initial_positions && { initial_positions })
+        num_patches: validatedNumPatches,
+        ...(formattedInitialPositions && { initial_positions: formattedInitialPositions })
       }
     }) as PredictionWithError;
 
