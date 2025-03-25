@@ -35,6 +35,7 @@ export function InteractiveCanvas({ onPatchesChange, parsedPatches }: Interactiv
   const [images, setImages] = useState<Record<string, HTMLImageElement>>({});
   const stageRef = useRef<any>(null);
   const containerRef = useRef<HTMLDivElement>(null);
+  const internalUpdate = useRef(false);
 
   // Handle window resize to make the canvas responsive
   useEffect(() => {
@@ -57,15 +58,16 @@ export function InteractiveCanvas({ onPatchesChange, parsedPatches }: Interactiv
 
   // Notify parent component when patches change
   useEffect(() => {
-    onPatchesChange(placedPatches);
+    // Only notify parent if this was an internal update (not from props)
+    if (internalUpdate.current) {
+      onPatchesChange(placedPatches);
+      internalUpdate.current = false;
+    }
   }, [placedPatches, onPatchesChange]);
 
   // Handle parsed patches from API response
   useEffect(() => {
     if (!parsedPatches || parsedPatches.length === 0) return;
-
-    // Clear existing patches if needed
-    // setPlacedPatches([]);
 
     // Process each parsed patch
     const patchesToAdd = parsedPatches.map(patch => {
@@ -100,8 +102,10 @@ export function InteractiveCanvas({ onPatchesChange, parsedPatches }: Interactiv
       }
     });
 
-    // Add the new patches to the canvas
-    setPlacedPatches(prev => [...patchesToAdd]);
+    // Set the patches directly without triggering the other useEffect
+    setPlacedPatches(patchesToAdd);
+    // Manually notify parent since we're bypassing the internal update flag
+    onPatchesChange(patchesToAdd);
   }, [parsedPatches]);
 
   // Convert canvas coordinates to the -1 to 1 coordinate system
@@ -141,12 +145,14 @@ export function InteractiveCanvas({ onPatchesChange, parsedPatches }: Interactiv
       isDragging: false,
     };
 
+    internalUpdate.current = true;
     setPlacedPatches(prev => [...prev, newPatch]);
     toast.success(`Added ${patch.name} to canvas`);
   };
 
   // Handle drag start for a patch
   const handleDragStart = (id: string) => {
+    internalUpdate.current = true;
     setPlacedPatches(prev =>
       prev.map(p => ({
         ...p,
@@ -157,6 +163,7 @@ export function InteractiveCanvas({ onPatchesChange, parsedPatches }: Interactiv
 
   // Handle drag end for a patch
   const handleDragEnd = (id: string, x: number, y: number) => {
+    internalUpdate.current = true;
     setPlacedPatches(prev =>
       prev.map(p => {
         if (p.id !== id) return p;
@@ -207,6 +214,7 @@ export function InteractiveCanvas({ onPatchesChange, parsedPatches }: Interactiv
 
   // Remove a patch from the canvas
   const removePatch = (id: string) => {
+    internalUpdate.current = true;
     setPlacedPatches(prev => prev.filter(p => p.id !== id));
     toast.success("Patch removed from canvas");
   };
@@ -322,7 +330,10 @@ export function InteractiveCanvas({ onPatchesChange, parsedPatches }: Interactiv
 
         <div className="absolute bottom-2 right-2">
           <button
-            onClick={() => setPlacedPatches([])}
+            onClick={() => {
+              internalUpdate.current = true;
+              setPlacedPatches([]);
+            }}
             className="rounded-md bg-red-100 px-2 py-1 text-xs text-red-700 hover:bg-red-200"
           >
             Clear Canvas

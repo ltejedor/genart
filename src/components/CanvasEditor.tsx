@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { PatchLibrary, type Patch } from "./PatchLibrary";
 import { InteractiveCanvas, type PlacedPatch } from "./InteractiveCanvas";
 
@@ -41,9 +41,21 @@ export function CanvasEditor({ onCanvasDataChange, parsedPatches }: CanvasEditor
   
   // Handle patches change from the canvas
   const handlePatchesChange = (patches: PlacedPatch[]) => {
-    setPlacedPatches(patches);
-    onCanvasDataChange({ patches });
+    // Only update if the patches have actually changed
+    // This prevents unnecessary re-renders and infinite loops
+    if (JSON.stringify(patches) !== JSON.stringify(placedPatches)) {
+      setPlacedPatches(patches);
+      onCanvasDataChange({ patches });
+    }
   };
+  
+  // Handle parsed patches from props
+  useEffect(() => {
+    if (parsedPatches && parsedPatches.length > 0) {
+      // We don't need to do anything here as the InteractiveCanvas
+      // will handle the parsed patches and call handlePatchesChange
+    }
+  }, [parsedPatches]);
   
   return (
     <div className="space-y-6 w-full max-w-2xl">
