@@ -1,15 +1,32 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import toast from "react-hot-toast";
+import { PATCH_URL_PATTERN } from "./PatchLibrary";
 
 // Define the form schema using zod
 const formSchema = z.object({
-  prompt: z.string().min(1, "Prompt is required"),
+  mode: z.enum(["text", "image"]).default("text"),
+  prompt: z.string().optional(),
   numPatches: z.number().int().min(1).max(250).default(5),
+  optimSteps: z.number().int().min(1).max(15000).default(250),
+  image: z.instanceof(File).optional(),
+}).refine((data) => {
+  // If mode is text, prompt is required
+  if (data.mode === "text") {
+    return !!data.prompt;
+  }
+  // If mode is image, image is required
+  if (data.mode === "image") {
+    return !!data.image;
+  }
+  return false;
+}, {
+  message: "Please provide either a text prompt or an image based on the selected mode",
+  path: ["prompt"], // This will show the error on the prompt field for text mode
 });
 
 type FormValues = z.infer<typeof formSchema>;
@@ -33,6 +50,7 @@ type ParsedPatch = {
   y: number;
   rotation?: number;
   scale?: number;
+  library?: string;
 };
 
 type VectorGraphicsFormProps = {
@@ -56,6 +74,19 @@ const extractImageName = (src: string): string => {
   return filename;
 };
 
+// Helper function to determine the active library from canvas data
+const determineActiveLibrary = (canvasData?: VectorGraphicsFormProps["canvasData"]): string => {
+  if (!canvasData || !canvasData.patches || canvasData.patches.length === 0) {
+    return "animals"; // Default to animals if no patches
+  }
+  
+  // Extract library from the first patch's src
+  const firstPatch = canvasData.patches[0];
+  const pathParts = firstPatch.src.split('/');
+  // The library is the second part of the path: /patches/[library]/image_x.png
+  return pathParts.length >= 3 ? pathParts[2] : "animals";
+};
+
 export function VectorGraphicsForm({ canvasData, onPatchesVisualize }: VectorGraphicsFormProps) {
   const [isGenerating, setIsGenerating] = useState(false);
   const [generatedResults, setGeneratedResults] = useState<ImageJsonPair[]>([]);
@@ -63,22 +94,115 @@ export function VectorGraphicsForm({ canvasData, onPatchesVisualize }: VectorGra
   const [predictionId, setPredictionId] = useState<string | null>(null);
   const [parsedPatches, setParsedPatches] = useState<ParsedPatch[]>([]);
   const [isVisualizing, setIsVisualizing] = useState(false);
+  const [imagePreview, setImagePreview] = useState<string | null>(null);
+  const [selectedMode, setSelectedMode] = useState<"text" | "image">("text");
 
   const {
     register,
     handleSubmit,
-    formState: { errors },
+    watch,
+    setValue,
+    formState: { errors, isSubmitting, isValid },
   } = useForm<FormValues>({
     resolver: zodResolver(formSchema),
     defaultValues: {
+      mode: "text",
       prompt: "",
       numPatches: 5,
+      optimSteps: 250,
     },
+    mode: "onChange",
   });
 
+  // Add a useEffect to log form errors
+  useEffect(() => {
+    if (Object.keys(errors).length > 0) {
+      console.log("Form validation errors:", errors);
+    }
+  }, [errors]);
+
+  // Add useEffect to update numPatches when canvasData changes
+  useEffect(() => {
+    if (canvasData && canvasData.patches) {
+      // Only update if the canvas has patches and the count is within valid range
+      const patchCount = canvasData.patches.length;
+      if (patchCount >= 1 && patchCount <= 250) {
+        setValue("numPatches", patchCount);
+      }
+    }
+  }, [canvasData, setValue]);
+
+  // Watch the current mode to conditionally render form elements
+  const currentMode = watch("mode");
+
+  // Handle form submission
+  const formSubmitHandler = handleSubmit(
+    (data) => {
+      console.log("Form submitted successfully:", data);
+      onSubmit(data);
+    },
+    (errors) => {
+      console.log("Form submission failed with errors:", errors);
+      if (currentMode === "text" && !watch("prompt")) {
+        toast.error("Please enter a text prompt");
+      } else if (currentMode === "image" && !watch("image")) {
+        toast.error("Please upload an image");
+      } else {
+        toast.error("Please check the form for errors");
+      }
+    }
+  );
+
+  // Handle image file selection
+  const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    // Validate file type
+    const validTypes = ["image/jpeg", "image/png", "image/gif", "image/webp"];
+    if (!validTypes.includes(file.type)) {
+      toast.error("Please upload a valid image file (JPEG, PNG, GIF, WEBP)");
+      return;
+    }
+
+    // Validate file size (max 5MB)
+    if (file.size > 5 * 1024 * 1024) {
+      toast.error("Image size should be less than 5MB");
+      return;
+    }
+
+    // Set the file in the form
+    setValue("image", file);
+
+    // Create a preview URL
+    const reader = new FileReader();
+    reader.onloadend = () => {
+      setImagePreview(reader.result as string);
+    };
+    reader.readAsDataURL(file);
+  };
+
+  // Handle mode change
+  const handleModeChange = (mode: "text" | "image") => {
+    setValue("mode", mode);
+    setSelectedMode(mode);
+
+    // Clear the other mode's data
+    if (mode === "text") {
+      setValue("image", undefined);
+      setImagePreview(null);
+    } else {
+      setValue("prompt", "");
+    }
+  };
+
   // Function to create a prediction with error handling
-  const createPrediction = async (prompt: string, numPatches: number) => {
+  const createPrediction = async (formData: FormValues) => {
     try {
+      // Determine the active library from canvas data
+      const activeLibrary = determineActiveLibrary(canvasData);
+      const patchUrl = `${PATCH_URL_PATTERN}${activeLibrary}.npy`;
+      
       // Format patches data into initial_positions if available
       const initial_positions = canvasData?.patches.map(patch => [
         extractImageName(patch.src),
@@ -88,19 +212,47 @@ export function VectorGraphicsForm({ canvasData, onPatchesVisualize }: VectorGra
 
       // Log the initial positions for debugging
       console.log(`Sending ${initial_positions.length} initial positions:`, initial_positions);
+      console.log(`Using patch URL: ${patchUrl}`);
+
+      // Create form data for multipart/form-data if we have an image
+      let requestBody;
+      let headers: HeadersInit = {
+        "Cache-Control": "no-cache, no-store, must-revalidate",
+        "Pragma": "no-cache"
+      };
+
+      if (formData.mode === "image" && formData.image) {
+        // For image upload mode, use FormData
+        const apiFormData = new FormData();
+        apiFormData.append("mode", formData.mode);
+        apiFormData.append("numPatches", formData.numPatches.toString());
+        apiFormData.append("optimSteps", formData.optimSteps.toString());
+        apiFormData.append("image", formData.image);
+        apiFormData.append("patch_url", patchUrl);
+
+        if (initial_positions.length > 0) {
+          apiFormData.append("initial_positions", JSON.stringify(initial_positions));
+        }
+
+        requestBody = apiFormData;
+        // Don't set Content-Type for FormData, browser will set it with boundary
+      } else {
+        // For text prompt mode, use JSON
+        requestBody = JSON.stringify({
+          mode: formData.mode,
+          prompt: formData.prompt,
+          numPatches: formData.numPatches,
+          optimSteps: formData.optimSteps,
+          initial_positions,
+          patch_url: patchUrl
+        });
+        headers["Content-Type"] = "application/json";
+      }
 
       const response = await fetch("/api/replicate/predictions", {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "Cache-Control": "no-cache, no-store, must-revalidate",
-          "Pragma": "no-cache"
-        },
-        body: JSON.stringify({
-          prompt,
-          numPatches,
-          initial_positions
-        }),
+        headers,
+        body: requestBody,
         cache: "no-store",
       });
 
@@ -159,11 +311,13 @@ export function VectorGraphicsForm({ canvasData, onPatchesVisualize }: VectorGra
 
       // Extract patch information from the JSON
       // The exact structure depends on the API response format
-      // This is a placeholder implementation
       let patches: ParsedPatch[] = [];
 
+      console.log(jsonData);
+      
+      // Determine the active library from canvas data
+      const activeLibrary = determineActiveLibrary(canvasData);
 
-      console.log(jsonData)
       // If the JSON is an array of patches
       patches = jsonData.map(item => ({
         patch_id: item.id,
@@ -171,10 +325,11 @@ export function VectorGraphicsForm({ canvasData, onPatchesVisualize }: VectorGra
         x: item.x,
         y: item.y,
         rotation: item.rotation,
-        scale: item.scale
+        scale: item.scale,
+        library: activeLibrary // Add the library information
       }));
 
-     console.log(patches)
+      console.log(patches);
       return patches;
     } catch (error) {
       console.error("Error fetching or parsing JSON:", error);
@@ -279,6 +434,21 @@ export function VectorGraphicsForm({ canvasData, onPatchesVisualize }: VectorGra
   };
 
   const onSubmit = async (data: FormValues) => {
+    console.log("Form Submitted", data);
+    console.log("Current mode:", data.mode);
+    console.log("Image data:", data.image);
+    
+    // Validate that we have the required data for the selected mode
+    if (data.mode === "text" && !data.prompt) {
+      toast.error("Please enter a text prompt");
+      return;
+    }
+
+    if (data.mode === "image" && !data.image) {
+      toast.error("Please upload an image");
+      return;
+    }
+
     setIsGenerating(true);
     setGeneratedResults([]);
     setStatusMessage("Starting generation...");
@@ -286,10 +456,14 @@ export function VectorGraphicsForm({ canvasData, onPatchesVisualize }: VectorGra
 
     try {
       // Start the loading toast
-      const loadingToast = toast.loading("Generating vector graphic...");
+      const loadingToast = toast.loading(
+        data.mode === "text"
+          ? "Generating vector graphic from text prompt..."
+          : "Generating vector graphic from image..."
+      );
 
       // Create the prediction
-      const prediction = await createPrediction(data.prompt, data.numPatches);
+      const prediction = await createPrediction(data);
       setPredictionId(prediction.id);
 
       setStatusMessage(`Created prediction with ID: ${prediction.id}. ${
@@ -346,30 +520,120 @@ export function VectorGraphicsForm({ canvasData, onPatchesVisualize }: VectorGra
       <div>
         <h2 className="text-2xl font-bold">Generate Vector Graphics</h2>
         <p className="mt-2 text-sm text-gray-600">
-          Enter a prompt to generate AI-created vector graphics
+          Choose a mode to generate AI-created vector graphics
         </p>
       </div>
 
-      <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
-        <div>
-          <label
-            htmlFor="prompt"
-            className="block text-sm font-medium text-gray-700"
-          >
-            Prompt
-          </label>
-          <textarea
-            id="prompt"
-            rows={3}
-            className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-indigo-500"
-            placeholder="Describe what you want to generate..."
-            {...register("prompt")}
-            disabled={isGenerating}
-          />
-          {errors.prompt && (
-            <p className="mt-1 text-sm text-red-600">{errors.prompt.message}</p>
-          )}
-        </div>
+      <div className="flex space-x-4 mb-4">
+        <button
+          type="button"
+          onClick={() => handleModeChange("text")}
+          className={`flex-1 py-2 px-4 rounded-md ${
+            currentMode === "text"
+              ? "bg-indigo-600 text-white"
+              : "bg-gray-200 text-gray-700 hover:bg-gray-300"
+          }`}
+          disabled={isGenerating}
+        >
+          Text Prompt
+        </button>
+        <button
+          type="button"
+          onClick={() => handleModeChange("image")}
+          className={`flex-1 py-2 px-4 rounded-md ${
+            currentMode === "image"
+              ? "bg-indigo-600 text-white"
+              : "bg-gray-200 text-gray-700 hover:bg-gray-300"
+          }`}
+          disabled={isGenerating}
+        >
+          Image Upload
+        </button>
+      </div>
+
+      <form onSubmit={formSubmitHandler} className="space-y-4">
+        <input type="hidden" {...register("mode")} />
+
+        {currentMode === "text" && (
+          <div>
+            <label
+              htmlFor="prompt"
+              className="block text-sm font-medium text-gray-700"
+            >
+              Prompt
+            </label>
+            <textarea
+              id="prompt"
+              rows={3}
+              className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-indigo-500"
+              placeholder="Describe what you want to generate..."
+              {...register("prompt")}
+              disabled={isGenerating}
+            />
+            {errors.prompt && (
+              <p className="mt-1 text-sm text-red-600">{errors.prompt.message}</p>
+            )}
+          </div>
+        )}
+
+        {currentMode === "image" && (
+          <div>
+            <label
+              htmlFor="image"
+              className="block text-sm font-medium text-gray-700"
+            >
+              Upload Reference Image
+            </label>
+            <div className="mt-1 flex items-center justify-center w-full">
+              <label
+                htmlFor="image-upload"
+                className="flex flex-col items-center justify-center w-full h-64 border-2 border-gray-300 border-dashed rounded-lg cursor-pointer bg-gray-50 hover:bg-gray-100"
+              >
+                {imagePreview ? (
+                  <div className="relative w-full h-full p-2">
+                    <img
+                      src={imagePreview}
+                      alt="Preview"
+                      className="w-full h-full object-contain"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setImagePreview(null);
+                        setValue("image", undefined);
+                      }}
+                      className="absolute top-2 right-2 bg-red-500 text-white rounded-full p-1"
+                      disabled={isGenerating}
+                    >
+                      <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                        <path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd" />
+                      </svg>
+                    </button>
+                  </div>
+                ) : (
+                  <div className="flex flex-col items-center justify-center pt-5 pb-6">
+                    <svg className="w-8 h-8 mb-4 text-gray-500" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 20 16">
+                      <path stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 13h3a3 3 0 0 0 0-6h-.025A5.56 5.56 0 0 0 16 6.5 5.5 5.5 0 0 0 5.207 5.021C5.137 5.017 5.071 5 5 5a4 4 0 0 0 0 8h2.167M10 15V6m0 0L8 8m2-2 2 2"/>
+                    </svg>
+                    <p className="mb-2 text-sm text-gray-500"><span className="font-semibold">Click to upload</span> or drag and drop</p>
+                    <p className="text-xs text-gray-500">PNG, JPG, GIF or WEBP (MAX. 5MB)</p>
+                  </div>
+                )}
+                <input
+                  id="image-upload"
+                  type="file"
+                  className="hidden"
+                  accept="image/png, image/jpeg, image/gif, image/webp"
+                  onChange={handleImageChange}
+                  disabled={isGenerating}
+                />
+              </label>
+            </div>
+            {errors.image && (
+              <p className="mt-1 text-sm text-red-600">{errors.image.message}</p>
+            )}
+          </div>
+        )}
 
         <div>
           <label
@@ -396,6 +660,39 @@ export function VectorGraphicsForm({ canvasData, onPatchesVisualize }: VectorGra
           )}
         </div>
 
+        <div>
+          <label
+            htmlFor="optimSteps"
+            className="block text-sm font-medium text-gray-700"
+          >
+            Optimization Steps (1-15,000)
+          </label>
+          <div className="mt-1 relative">
+            <input
+              id="optimSteps"
+              type="number"
+              min="1"
+              max="15000"
+              className="block w-full rounded-md border border-gray-300 px-3 py-2 shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-indigo-500"
+              {...register("optimSteps", {
+                valueAsNumber: true,
+                min: { value: 1, message: "Minimum 1 step" },
+                max: { value: 15000, message: "Maximum 15,000 steps" }
+              })}
+              disabled={isGenerating}
+            />
+            <div className="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none">
+              <span className="text-gray-500 text-xs">Default: 250</span>
+            </div>
+          </div>
+          {errors.optimSteps && (
+            <p className="mt-1 text-sm text-red-600">{errors.optimSteps.message}</p>
+          )}
+          <p className="mt-1 text-xs text-gray-500">
+            Higher values may produce better results but take longer to generate. Recommended range: 100-1000.
+          </p>
+        </div>
+
         {canvasData && canvasData.patches.length > 0 && (
           <div className="rounded-md bg-blue-50 p-2 text-sm text-blue-700">
             <p className="font-medium">Canvas Data</p>
@@ -406,7 +703,7 @@ export function VectorGraphicsForm({ canvasData, onPatchesVisualize }: VectorGra
 
         <button
           type="submit"
-          disabled={isGenerating}
+          disabled={isGenerating || (currentMode === "image" && !imagePreview) || (currentMode === "text" && !watch("prompt"))}
           className="w-full rounded-md bg-indigo-600 px-4 py-2 text-white hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 disabled:bg-gray-400"
         >
           {isGenerating ? "Generating..." : "Generate Vector Graphic"}

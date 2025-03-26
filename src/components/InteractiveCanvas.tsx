@@ -15,6 +15,7 @@ export type PlacedPatch = {
   isDragging: boolean;
   rotation?: number;
   scale?: number;
+  library?: string;
 };
 
 type InteractiveCanvasProps = {
@@ -73,7 +74,9 @@ export function InteractiveCanvas({ onPatchesChange, parsedPatches }: Interactiv
     const patchesToAdd = parsedPatches.map(patch => {
       // Convert patch_id to the corresponding image path
       const patchId = String(patch.patch_id);
-      const src = `/animals/image_${patch.img_index}.png`;
+      // Determine the library from the img_index (this is a simplification, adjust as needed)
+      const library = "animals"; // Default to animals for backward compatibility
+      const src = `/patches/${library}/image_${patch.img_index}.png`;
 
       // Create a new placed patch with the parsed data
       return {
@@ -84,7 +87,8 @@ export function InteractiveCanvas({ onPatchesChange, parsedPatches }: Interactiv
         y: patch.y, // Already in -1 to 1 coordinate system
         isDragging: false,
         rotation: patch.rotation || 0,
-        scale: patch.scale || 1
+        scale: patch.scale || 1,
+        library: library
       };
     });
 
@@ -143,6 +147,7 @@ export function InteractiveCanvas({ onPatchesChange, parsedPatches }: Interactiv
       x: canvasToCoord(x, stageSize.width, false),
       y: canvasToCoord(y, stageSize.height, true),
       isDragging: false,
+      library: patch.library,
     };
 
     internalUpdate.current = true;
