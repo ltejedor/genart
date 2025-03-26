@@ -96,6 +96,7 @@ export function VectorGraphicsForm({ canvasData, onPatchesVisualize }: VectorGra
   const [isVisualizing, setIsVisualizing] = useState(false);
   const [imagePreview, setImagePreview] = useState<string | null>(null);
   const [selectedMode, setSelectedMode] = useState<"text" | "image">("text");
+  const [activeGenerationLibrary, setActiveGenerationLibrary] = useState<string>("animals");
 
   const {
     register,
@@ -201,6 +202,7 @@ export function VectorGraphicsForm({ canvasData, onPatchesVisualize }: VectorGra
     try {
       // Determine the active library from canvas data
       const activeLibrary = determineActiveLibrary(canvasData);
+      setActiveGenerationLibrary(activeLibrary); // Store the library used for generation
       const patchUrl = `${PATCH_URL_PATTERN}${activeLibrary}.npy`;
       
       // Format patches data into initial_positions if available
@@ -315,8 +317,8 @@ export function VectorGraphicsForm({ canvasData, onPatchesVisualize }: VectorGra
 
       console.log(jsonData);
       
-      // Determine the active library from canvas data
-      const activeLibrary = determineActiveLibrary(canvasData);
+      // Use the library that was active during generation, not the current canvas library
+      const library = activeGenerationLibrary;
 
       // If the JSON is an array of patches
       patches = jsonData.map(item => ({
@@ -326,7 +328,7 @@ export function VectorGraphicsForm({ canvasData, onPatchesVisualize }: VectorGra
         y: item.y,
         rotation: item.rotation,
         scale: item.scale,
-        library: activeLibrary // Add the library information
+        library: library // Use the stored library information
       }));
 
       console.log(patches);

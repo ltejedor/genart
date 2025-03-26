@@ -17,6 +17,7 @@ type CanvasEditorProps = {
     y: number;
     rotation?: number;
     scale?: number;
+    library?: string;
   }>;
 };
 

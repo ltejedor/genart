@@ -27,6 +27,7 @@ type InteractiveCanvasProps = {
     y: number;
     rotation?: number;
     scale?: number;
+    library?: string;
   }>;
 };
 
@@ -74,8 +75,8 @@ export function InteractiveCanvas({ onPatchesChange, parsedPatches }: Interactiv
     const patchesToAdd = parsedPatches.map(patch => {
       // Convert patch_id to the corresponding image path
       const patchId = String(patch.patch_id);
-      // Determine the library from the img_index (this is a simplification, adjust as needed)
-      const library = "animals"; // Default to animals for backward compatibility
+      // Use the library from the patch data if available, otherwise default to animals
+      const library = patch.library || "animals";
       const src = `/patches/${library}/image_${patch.img_index}.png`;
 
       // Create a new placed patch with the parsed data
