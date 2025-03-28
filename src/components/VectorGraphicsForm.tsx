@@ -781,7 +781,7 @@ export function VectorGraphicsForm({
       {resultsContainerRef.current && generatedResults.length > 0 && createPortal(
         <div className="space-y-4">
           <div className="grid grid-cols-1 gap-4">
-            {generatedResults.map((pair, index) => {
+            {[...generatedResults].reverse().map((pair, index) => {
               const [imageUrl, jsonUrl] = pair;
               return (
                 <div key={index} className="overflow-hidden rounded-lg border border-gray-300">
