@@ -8,12 +8,13 @@ import { Tab } from "@headlessui/react";
 export type PatchLibrary = "animals" | "handwritten_mnist" | "shore_glass" | "fruit";
 
 // Define the library metadata
-const LIBRARY_METADATA: Record<PatchLibrary, { name: string; count: number; displayName: string }> = {
+export const LIBRARY_METADATA: Record<PatchLibrary, { name: string; count: number; displayName: string }> = {
   animals: { name: "animals", count: 43, displayName: "Animals" },
   handwritten_mnist: { name: "handwritten_mnist", count: 160, displayName: "Handwritten" },
   shore_glass: { name: "shore_glass", count: 48, displayName: "Shore Glass" },
   fruit: { name: "fruit", count: 18, displayName: "Fruit" },
 };
+
 
 // Define the patch URL pattern for API submission
 export const PATCH_URL_PATTERN = "https://storage.googleapis.com/dm_arnheim_3_assets/collage_patches/";
@@ -57,7 +58,7 @@ export function PatchLibrary({ onPatchSelect, selectedLibrary, onLibraryChange }
       setIsLoading(true);
       try {
         const libraryInfo = LIBRARY_METADATA[activeLibrary];
-        
+
         // Create an array of patches based on the library count
         const patchesArray: Patch[] = Array.from({ length: libraryInfo.count }, (_, i) => ({
           id: `patch-${i}`,
@@ -65,7 +66,7 @@ export function PatchLibrary({ onPatchSelect, selectedLibrary, onLibraryChange }
           name: `${libraryInfo.displayName} ${i}`,
           library: activeLibrary,
         }));
-        
+
         setPatches(patchesArray);
       } catch (error) {
         console.error(`Error loading patches from ${activeLibrary}:`, error);
@@ -77,21 +78,28 @@ export function PatchLibrary({ onPatchSelect, selectedLibrary, onLibraryChange }
     loadPatches();
   }, [activeLibrary]);
 
+  // Get the index of the active library for the Tab.Group
+  const libraryKeys = Object.keys(LIBRARY_METADATA) as PatchLibrary[];
+  const selectedIndex = libraryKeys.indexOf(activeLibrary);
+
   return (
     <div className="w-full">
       <h3 className="mb-2 text-lg font-medium">Patch Library</h3>
-      
-      <Tab.Group onChange={(index) => {
-        const libraries = Object.keys(LIBRARY_METADATA) as PatchLibrary[];
-        handleLibraryChange(libraries[index]);
-      }}>
+
+      <Tab.Group 
+        selectedIndex={selectedIndex} 
+        onChange={(index) => {
+          const libraries = Object.keys(LIBRARY_METADATA) as PatchLibrary[];
+          handleLibraryChange(libraries[index]);
+        }}
+      >
         <Tab.List className="flex space-x-1 rounded-xl bg-blue-900/10 p-1 mb-3">
           {Object.entries(LIBRARY_METADATA).map(([key, library]) => (
             <Tab
               key={key}
               className={({ selected }) =>
-                `w-full rounded-lg py-2 text-sm font-medium leading-5 
-                ${selected 
+                `w-full rounded-lg py-2 text-sm font-medium leading-5
+                ${selected
                   ? 'bg-white text-blue-700 shadow'
                   : 'text-gray-600 hover:bg-white/[0.12] hover:text-blue-600'}`
               }
@@ -101,7 +109,7 @@ export function PatchLibrary({ onPatchSelect, selectedLibrary, onLibraryChange }
           ))}
         </Tab.List>
       </Tab.Group>
-      
+
       {isLoading ? (
         <div className="flex h-40 items-center justify-center">
           <p>Loading patches...</p>
@@ -131,7 +139,7 @@ export function PatchLibrary({ onPatchSelect, selectedLibrary, onLibraryChange }
           ))}
         </div>
       )}
-      
+
       <p className="mt-2 text-xs text-gray-500">
         Drag and drop patches onto the canvas or click to select
       </p>

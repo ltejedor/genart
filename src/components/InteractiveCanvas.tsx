@@ -45,7 +45,7 @@ export function InteractiveCanvas({ onPatchesChange, parsedPatches }: Interactiv
       if (containerRef.current) {
         const width = containerRef.current.offsetWidth;
         // Make height proportional but with a minimum
-        const height = Math.max(width, 400);
+        const height = Math.max(width * 0.75, 350);
         setStageSize({ width, height });
       }
     };
@@ -227,7 +227,10 @@ export function InteractiveCanvas({ onPatchesChange, parsedPatches }: Interactiv
 
   return (
     <div className="w-full space-y-4">
-      <h3 className="text-lg font-medium">Canvas</h3>
+      <h3 className="text-lg font-medium">Interactive Canvas</h3>
+      <p className="text-sm text-gray-600">
+        Drag patches to position them. Click to remove.
+      </p>
 
       <div
         ref={containerRef}
@@ -291,6 +294,23 @@ export function InteractiveCanvas({ onPatchesChange, parsedPatches }: Interactiv
               fontSize={12}
               fill="#6b7280"
             />
+
+            {/* Informational text when no patches are placed */}
+            {placedPatches.length === 0 && (
+              <Group>
+                <Text
+                  x={stageSize.width / 2 - 190}
+                  y={stageSize.height / 2 - 40}
+                  width={380}
+                  text="Place patches on canvas, or they'll be placed randomly when generation begins."
+                  fontSize={14}
+                  fontStyle="normal"
+                  fill="#4B5563"
+                  align="center"
+                  wrap="word"
+                />
+              </Group>
+            )}
 
             {/* Placed patches */}
             {placedPatches.map((patch) => {

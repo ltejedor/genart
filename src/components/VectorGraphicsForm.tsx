@@ -1,11 +1,12 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
+import { createPortal } from "react-dom";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import toast from "react-hot-toast";
-import { PATCH_URL_PATTERN } from "./PatchLibrary";
+import { PATCH_URL_PATTERN, type PatchLibrary as PatchLibraryType, LIBRARY_METADATA } from "./PatchLibrary";
 
 // Define the form schema using zod
 const formSchema = z.object({
@@ -65,6 +66,8 @@ type VectorGraphicsFormProps = {
     }>;
   };
   onPatchesVisualize?: (patches: ParsedPatch[]) => void;
+  selectedLibrary?: PatchLibraryType;
+  onLibraryChange?: (library: PatchLibraryType) => void;
 };
 
 // Helper function to extract the image name from the src path
@@ -79,7 +82,7 @@ const determineActiveLibrary = (canvasData?: VectorGraphicsFormProps["canvasData
   if (!canvasData || !canvasData.patches || canvasData.patches.length === 0) {
     return "animals"; // Default to animals if no patches
   }
-  
+
   // Extract library from the first patch's src
   const firstPatch = canvasData.patches[0];
   const pathParts = firstPatch.src.split('/');
@@ -87,7 +90,12 @@ const determineActiveLibrary = (canvasData?: VectorGraphicsFormProps["canvasData
   return pathParts.length >= 3 ? pathParts[2] : "animals";
 };
 
-export function VectorGraphicsForm({ canvasData, onPatchesVisualize }: VectorGraphicsFormProps) {
+export function VectorGraphicsForm({
+  canvasData,
+  onPatchesVisualize,
+  selectedLibrary = "animals",
+  onLibraryChange
+}: VectorGraphicsFormProps) {
   const [isGenerating, setIsGenerating] = useState(false);
   const [generatedResults, setGeneratedResults] = useState<ImageJsonPair[]>([]);
   const [statusMessage, setStatusMessage] = useState<string>("");
@@ -96,7 +104,13 @@ export function VectorGraphicsForm({ canvasData, onPatchesVisualize }: VectorGra
   const [isVisualizing, setIsVisualizing] = useState(false);
   const [imagePreview, setImagePreview] = useState<string | null>(null);
   const [selectedMode, setSelectedMode] = useState<"text" | "image">("text");
-  const [activeGenerationLibrary, setActiveGenerationLibrary] = useState<string>("animals");
+
+  const resultsContainerRef = useRef<HTMLElement | null>(null);
+
+  // Find the results container element
+  useEffect(() => {
+    resultsContainerRef.current = document.getElementById('results-container');
+  }, []);
 
   const {
     register,
@@ -197,14 +211,19 @@ export function VectorGraphicsForm({ canvasData, onPatchesVisualize }: VectorGra
     }
   };
 
+  // Handle library change
+  const handleLibraryChange = (library: PatchLibraryType) => {
+    if (onLibraryChange) {
+      onLibraryChange(library);
+    }
+  };
+
   // Function to create a prediction with error handling
   const createPrediction = async (formData: FormValues) => {
     try {
-      // Determine the active library from canvas data
-      const activeLibrary = determineActiveLibrary(canvasData);
-      setActiveGenerationLibrary(activeLibrary); // Store the library used for generation
-      const patchUrl = `${PATCH_URL_PATTERN}${activeLibrary}.npy`;
-      
+      // Use the selectedLibrary prop instead of determining from canvas data
+      const patchUrl = `${PATCH_URL_PATTERN}${selectedLibrary}.npy`;
+
       // Format patches data into initial_positions if available
       const initial_positions = canvasData?.patches.map(patch => [
         extractImageName(patch.src),
@@ -316,9 +335,9 @@ export function VectorGraphicsForm({ canvasData, onPatchesVisualize }: VectorGra
       let patches: ParsedPatch[] = [];
 
       console.log(jsonData);
-      
-      // Use the library that was active during generation, not the current canvas library
-      const library = activeGenerationLibrary;
+
+      // Use the selectedLibrary prop instead of activeGenerationLibrary
+      const library = selectedLibrary;
 
       // If the JSON is an array of patches
       patches = jsonData.map(item => ({
@@ -439,7 +458,7 @@ export function VectorGraphicsForm({ canvasData, onPatchesVisualize }: VectorGra
     console.log("Form Submitted", data);
     console.log("Current mode:", data.mode);
     console.log("Image data:", data.image);
-    
+
     // Validate that we have the required data for the selected mode
     if (data.mode === "text" && !data.prompt) {
       toast.error("Please enter a text prompt");
@@ -518,227 +537,250 @@ export function VectorGraphicsForm({ canvasData, onPatchesVisualize }: VectorGra
   };
 
   return (
-    <div className="w-full max-w-md space-y-6">
-      <div>
-        <h2 className="text-2xl font-bold">Generate Vector Graphics</h2>
-        <p className="mt-2 text-sm text-gray-600">
-          Choose a mode to generate AI-created vector graphics
-        </p>
-      </div>
+    <>
+      <div className="w-full space-y-6">
 
-      <div className="flex space-x-4 mb-4">
-        <button
-          type="button"
-          onClick={() => handleModeChange("text")}
-          className={`flex-1 py-2 px-4 rounded-md ${
-            currentMode === "text"
-              ? "bg-indigo-600 text-white"
-              : "bg-gray-200 text-gray-700 hover:bg-gray-300"
-          }`}
-          disabled={isGenerating}
-        >
-          Text Prompt
-        </button>
-        <button
-          type="button"
-          onClick={() => handleModeChange("image")}
-          className={`flex-1 py-2 px-4 rounded-md ${
-            currentMode === "image"
-              ? "bg-indigo-600 text-white"
-              : "bg-gray-200 text-gray-700 hover:bg-gray-300"
-          }`}
-          disabled={isGenerating}
-        >
-          Image Upload
-        </button>
-      </div>
 
-      <form onSubmit={formSubmitHandler} className="space-y-4">
-        <input type="hidden" {...register("mode")} />
-
-        {currentMode === "text" && (
-          <div>
-            <label
-              htmlFor="prompt"
-              className="block text-sm font-medium text-gray-700"
-            >
-              Prompt
-            </label>
-            <textarea
-              id="prompt"
-              rows={3}
-              className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-indigo-500"
-              placeholder="Describe what you want to generate..."
-              {...register("prompt")}
-              disabled={isGenerating}
-            />
-            {errors.prompt && (
-              <p className="mt-1 text-sm text-red-600">{errors.prompt.message}</p>
-            )}
-          </div>
-        )}
-
-        {currentMode === "image" && (
-          <div>
-            <label
-              htmlFor="image"
-              className="block text-sm font-medium text-gray-700"
-            >
-              Upload Reference Image
-            </label>
-            <div className="mt-1 flex items-center justify-center w-full">
-              <label
-                htmlFor="image-upload"
-                className="flex flex-col items-center justify-center w-full h-64 border-2 border-gray-300 border-dashed rounded-lg cursor-pointer bg-gray-50 hover:bg-gray-100"
-              >
-                {imagePreview ? (
-                  <div className="relative w-full h-full p-2">
-                    <img
-                      src={imagePreview}
-                      alt="Preview"
-                      className="w-full h-full object-contain"
-                    />
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setImagePreview(null);
-                        setValue("image", undefined);
-                      }}
-                      className="absolute top-2 right-2 bg-red-500 text-white rounded-full p-1"
-                      disabled={isGenerating}
-                    >
-                      <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-                        <path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd" />
-                      </svg>
-                    </button>
-                  </div>
-                ) : (
-                  <div className="flex flex-col items-center justify-center pt-5 pb-6">
-                    <svg className="w-8 h-8 mb-4 text-gray-500" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 20 16">
-                      <path stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 13h3a3 3 0 0 0 0-6h-.025A5.56 5.56 0 0 0 16 6.5 5.5 5.5 0 0 0 5.207 5.021C5.137 5.017 5.071 5 5 5a4 4 0 0 0 0 8h2.167M10 15V6m0 0L8 8m2-2 2 2"/>
-                    </svg>
-                    <p className="mb-2 text-sm text-gray-500"><span className="font-semibold">Click to upload</span> or drag and drop</p>
-                    <p className="text-xs text-gray-500">PNG, JPG, GIF or WEBP (MAX. 5MB)</p>
-                  </div>
-                )}
-                <input
-                  id="image-upload"
-                  type="file"
-                  className="hidden"
-                  accept="image/png, image/jpeg, image/gif, image/webp"
-                  onChange={handleImageChange}
-                  disabled={isGenerating}
-                />
-              </label>
-            </div>
-            {errors.image && (
-              <p className="mt-1 text-sm text-red-600">{errors.image.message}</p>
-            )}
-          </div>
-        )}
-
-        <div>
-          <label
-            htmlFor="numPatches"
-            className="block text-sm font-medium text-gray-700"
-          >
-            Number of Patches (1-250)
-          </label>
-          <input
-            id="numPatches"
-            type="number"
-            min="1"
-            max="250"
-            className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-indigo-500"
-            {...register("numPatches", {
-              valueAsNumber: true,
-              min: { value: 1, message: "Minimum 1 patch" },
-              max: { value: 250, message: "Maximum 250 patches" }
-            })}
+        <div className="flex space-x-4 mb-4">
+          <button
+            type="button"
+            onClick={() => handleModeChange("text")}
+            className={`flex-1 py-2 px-4 rounded-md ${
+              currentMode === "text"
+                ? "bg-indigo-600 text-white"
+                : "bg-gray-200 text-gray-700 hover:bg-gray-300"
+            }`}
             disabled={isGenerating}
-          />
-          {errors.numPatches && (
-            <p className="mt-1 text-sm text-red-600">{errors.numPatches.message}</p>
-          )}
+          >
+            Text Prompt
+          </button>
+          <button
+            type="button"
+            onClick={() => handleModeChange("image")}
+            className={`flex-1 py-2 px-4 rounded-md ${
+              currentMode === "image"
+                ? "bg-indigo-600 text-white"
+                : "bg-gray-200 text-gray-700 hover:bg-gray-300"
+            }`}
+            disabled={isGenerating}
+          >
+            Image Upload
+          </button>
         </div>
 
+        {/* Add Library Selection Dropdown */}
         <div>
           <label
-            htmlFor="optimSteps"
-            className="block text-sm font-medium text-gray-700"
+            htmlFor="librarySelect"
+            className="block text-sm font-medium text-gray-700 mb-1"
           >
-            Optimization Steps (1-15,000)
+            Patch Library
           </label>
-          <div className="mt-1 relative">
-            <input
-              id="optimSteps"
-              type="number"
-              min="1"
-              max="15000"
-              className="block w-full rounded-md border border-gray-300 px-3 py-2 shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-indigo-500"
-              {...register("optimSteps", {
-                valueAsNumber: true,
-                min: { value: 1, message: "Minimum 1 step" },
-                max: { value: 15000, message: "Maximum 15,000 steps" }
-              })}
-              disabled={isGenerating}
-            />
-            <div className="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none">
-              <span className="text-gray-500 text-xs">Default: 250</span>
-            </div>
-          </div>
-          {errors.optimSteps && (
-            <p className="mt-1 text-sm text-red-600">{errors.optimSteps.message}</p>
-          )}
+          <select
+            id="librarySelect"
+            value={selectedLibrary}
+            onChange={(e) => handleLibraryChange(e.target.value as PatchLibraryType)}
+            className="w-full rounded-md border border-gray-300 px-3 py-2 shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-indigo-500"
+            disabled={isGenerating}
+          >
+            {Object.entries(LIBRARY_METADATA).map(([key, library]) => (
+              <option key={key} value={key}>
+                {library.displayName}
+              </option>
+            ))}
+          </select>
           <p className="mt-1 text-xs text-gray-500">
-            Higher values may produce better results but take longer to generate. Recommended range: 100-1000.
+            Select which patch library to use for generation
           </p>
         </div>
 
-        {canvasData && canvasData.patches.length > 0 && (
-          <div className="rounded-md bg-blue-50 p-2 text-sm text-blue-700">
-            <p className="font-medium">Canvas Data</p>
-            <p>{canvasData.patches.length} patches will be included in the generation</p>
-            <p className="text-xs mt-1">Patch positions will be sent to the AI model to influence the generated result</p>
+        <form onSubmit={formSubmitHandler} className="space-y-4">
+          <input type="hidden" {...register("mode")} />
+
+          {currentMode === "text" && (
+            <div>
+              <label
+                htmlFor="prompt"
+                className="block text-sm font-medium text-gray-700"
+              >
+                Prompt
+              </label>
+              <textarea
+                id="prompt"
+                rows={3}
+                className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-indigo-500"
+                placeholder="Describe what you want to generate..."
+                {...register("prompt")}
+                disabled={isGenerating}
+              />
+              {errors.prompt && (
+                <p className="mt-1 text-sm text-red-600">{errors.prompt.message}</p>
+              )}
+            </div>
+          )}
+
+          {currentMode === "image" && (
+            <div>
+              <label
+                htmlFor="image"
+                className="block text-sm font-medium text-gray-700"
+              >
+                Upload Reference Image
+              </label>
+              <div className="mt-1 flex items-center justify-center w-full">
+                <label
+                  htmlFor="image-upload"
+                  className="flex flex-col items-center justify-center w-full h-48 border-2 border-gray-300 border-dashed rounded-lg cursor-pointer bg-gray-50 hover:bg-gray-100"
+                >
+                  {imagePreview ? (
+                    <div className="relative w-full h-full p-2">
+                      <img
+                        src={imagePreview}
+                        alt="Preview"
+                        className="w-full h-full object-contain"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setImagePreview(null);
+                          setValue("image", undefined);
+                        }}
+                        className="absolute top-2 right-2 bg-red-500 text-white rounded-full p-1"
+                        disabled={isGenerating}
+                      >
+                        <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                          <path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd" />
+                        </svg>
+                      </button>
+                    </div>
+                  ) : (
+                    <div className="flex flex-col items-center justify-center pt-5 pb-6">
+                      <svg className="w-8 h-8 mb-4 text-gray-500" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 20 16">
+                        <path stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 13h3a3 3 0 0 0 0-6h-.025A5.56 5.56 0 0 0 16 6.5 5.5 5.5 0 0 0 5.207 5.021C5.137 5.017 5.071 5 5 5a4 4 0 0 0 0 8h2.167M10 15V6m0 0L8 8m2-2 2 2"/>
+                      </svg>
+                      <p className="mb-2 text-sm text-gray-500"><span className="font-semibold">Click to upload</span> or drag and drop</p>
+                      <p className="text-xs text-gray-500">PNG, JPG, GIF or WEBP (MAX. 5MB)</p>
+                    </div>
+                  )}
+                  <input
+                    id="image-upload"
+                    type="file"
+                    className="hidden"
+                    accept="image/png, image/jpeg, image/gif, image/webp"
+                    onChange={handleImageChange}
+                    disabled={isGenerating}
+                  />
+                </label>
+              </div>
+              {errors.image && (
+                <p className="mt-1 text-sm text-red-600">{errors.image.message}</p>
+              )}
+            </div>
+          )}
+
+          <div>
+            <label
+              htmlFor="numPatches"
+              className="block text-sm font-medium text-gray-700"
+            >
+              Number of Patches (1-250)
+            </label>
+            <input
+              id="numPatches"
+              type="number"
+              min="1"
+              max="250"
+              className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-indigo-500"
+              {...register("numPatches", {
+                valueAsNumber: true,
+                min: { value: 1, message: "Minimum 1 patch" },
+                max: { value: 250, message: "Maximum 250 patches" }
+              })}
+              disabled={isGenerating}
+            />
+            {errors.numPatches && (
+              <p className="mt-1 text-sm text-red-600">{errors.numPatches.message}</p>
+            )}
+          </div>
+
+          <div>
+            <label
+              htmlFor="optimSteps"
+              className="block text-sm font-medium text-gray-700"
+            >
+              Optimization Steps (1-15,000)
+            </label>
+            <div className="mt-1 relative">
+              <input
+                id="optimSteps"
+                type="number"
+                min="1"
+                max="15000"
+                className="block w-full rounded-md border border-gray-300 px-3 py-2 shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-indigo-500"
+                {...register("optimSteps", {
+                  valueAsNumber: true,
+                  min: { value: 1, message: "Minimum 1 step" },
+                  max: { value: 15000, message: "Maximum 15,000 steps" }
+                })}
+                disabled={isGenerating}
+              />
+              <div className="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none">
+                <span className="text-gray-500 text-xs">Default: 250</span>
+              </div>
+            </div>
+            {errors.optimSteps && (
+              <p className="mt-1 text-sm text-red-600">{errors.optimSteps.message}</p>
+            )}
+            <p className="mt-1 text-xs text-gray-500">
+              Higher values may produce better results but take longer to generate. Recommended range: 100-1000.
+            </p>
+          </div>
+
+          {canvasData && canvasData.patches.length > 0 && (
+            <div className="rounded-md bg-blue-50 p-2 text-sm text-blue-700">
+              <p className="font-medium">Canvas Data</p>
+              <p>{canvasData.patches.length} patches will be included in the generation</p>
+              <p className="text-xs mt-1">Patch positions will be sent to the AI model to influence the generated result</p>
+            </div>
+          )}
+
+          <button
+            type="submit"
+            disabled={isGenerating || (currentMode === "image" && !imagePreview) || (currentMode === "text" && !watch("prompt"))}
+            className="w-full rounded-md bg-indigo-600 px-4 py-2 text-white hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 disabled:bg-gray-400"
+          >
+            {isGenerating ? "Generating..." : "Generate"}
+          </button>
+        </form>
+
+        {statusMessage && (
+          <div className="mt-4 p-2 bg-gray-100 rounded-md text-sm">
+            <p className="font-medium">Status:</p>
+            <p>{statusMessage}</p>
+
+            {predictionId && !generatedResults.length && (
+              <button
+                onClick={checkStatus}
+                className="mt-2 text-indigo-600 hover:text-indigo-800 text-sm font-medium"
+              >
+                Check Status Manually
+              </button>
+            )}
           </div>
         )}
 
-        <button
-          type="submit"
-          disabled={isGenerating || (currentMode === "image" && !imagePreview) || (currentMode === "text" && !watch("prompt"))}
-          className="w-full rounded-md bg-indigo-600 px-4 py-2 text-white hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 disabled:bg-gray-400"
-        >
-          {isGenerating ? "Generating..." : "Generate Vector Graphic"}
-        </button>
-      </form>
+        {parsedPatches.length > 0 && (
+          <div className="mt-4 p-2 bg-green-50 rounded-md text-sm text-green-700">
+            <p className="font-medium">Patches Visualized:</p>
+            <p>{parsedPatches.length} patches placed on canvas</p>
+          </div>
+        )}
+      </div>
 
-      {statusMessage && (
-        <div className="mt-4 p-2 bg-gray-100 rounded-md text-sm">
-          <p className="font-medium">Status:</p>
-          <p>{statusMessage}</p>
-
-          {predictionId && !generatedResults.length && (
-            <button
-              onClick={checkStatus}
-              className="mt-2 text-indigo-600 hover:text-indigo-800 text-sm font-medium"
-            >
-              Check Status Manually
-            </button>
-          )}
-        </div>
-      )}
-
-      {parsedPatches.length > 0 && (
-        <div className="mt-4 p-2 bg-green-50 rounded-md text-sm text-green-700">
-          <p className="font-medium">Patches Visualized:</p>
-          <p>{parsedPatches.length} patches placed on canvas</p>
-        </div>
-      )}
-
-      {generatedResults.length > 0 && (
-        <div className="mt-6">
-          <h3 className="mb-2 text-lg font-medium">Generated Results ({generatedResults.length})</h3>
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+      {/* Render results in the right column using portal */}
+      {resultsContainerRef.current && generatedResults.length > 0 && createPortal(
+        <div className="space-y-4">
+          <div className="grid grid-cols-1 gap-4">
             {generatedResults.map((pair, index) => {
               const [imageUrl, jsonUrl] = pair;
               return (
@@ -788,8 +830,9 @@ export function VectorGraphicsForm({ canvasData, onPatchesVisualize }: VectorGra
               );
             })}
           </div>
-        </div>
+        </div>,
+        resultsContainerRef.current
       )}
-    </div>
+    </>
   );
 }
