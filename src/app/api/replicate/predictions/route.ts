@@ -134,7 +134,7 @@ export async function POST(request: Request) {
 
     // Start prediction using the Replicate SDK
     const prediction = await replicate.predictions.create({
-      version: "25ede10dbea7c0db8e9492d45daa3c77772e06b4c1a033e689b201781938ab30",
+      version: "efc7ea72d81d13e99a1a2ec5d40dbf9893e851f0a7363ef3e8e44f5a142e1aa2",
       input,
     }) as PredictionWithError;
 

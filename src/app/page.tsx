@@ -14,6 +14,12 @@ export default function Home() {
     rotation?: number;
     scale?: number;
     library?: string;
+    squeeze?: number;
+    shear?: number;
+    red?: number;
+    green?: number;
+    blue?: number;
+    order?: number;
   }>>([]);
   const [selectedLibrary, setSelectedLibrary] = useState<PatchLibraryType>("animals");
 
@@ -28,6 +34,12 @@ export default function Home() {
     rotation?: number;
     scale?: number;
     library?: string;
+    squeeze?: number;
+    shear?: number;
+    red?: number;
+    green?: number;
+    blue?: number;
+    order?: number;
   }>) => {
     setParsedPatches(patches);
   };

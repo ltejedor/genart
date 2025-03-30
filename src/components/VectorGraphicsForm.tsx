@@ -52,6 +52,12 @@ type ParsedPatch = {
   rotation?: number;
   scale?: number;
   library?: string;
+  squeeze?: number;
+  shear?: number;
+  red?: number;
+  green?: number;
+  blue?: number;
+  order?: number;
 };
 
 type VectorGraphicsFormProps = {
@@ -347,7 +353,13 @@ export function VectorGraphicsForm({
         y: item.y,
         rotation: item.rotation,
         scale: item.scale,
-        library: library // Use the stored library information
+        library: library, // Use the stored library information
+        squeeze: item.squeeze,
+        shear: item.shear,
+        red: item.red,
+        green: item.green,
+        blue: item.blue,
+        order: item.order
       }));
 
       console.log(patches);

@@ -2,6 +2,7 @@
 
 import { useState, useRef, useEffect } from "react";
 import { Stage, Layer, Rect, Line, Text, Image as KonvaImage, Group } from "react-konva";
+import Konva from "konva";
 import type { Patch } from "./PatchLibrary";
 import toast from "react-hot-toast";
 
@@ -16,6 +17,12 @@ export type PlacedPatch = {
   rotation?: number;
   scale?: number;
   library?: string;
+  squeeze?: number;
+  shear?: number;
+  red?: number;
+  green?: number;
+  blue?: number;
+  order?: number;
 };
 
 type InteractiveCanvasProps = {
@@ -28,12 +35,28 @@ type InteractiveCanvasProps = {
     rotation?: number;
     scale?: number;
     library?: string;
+    squeeze?: number;
+    shear?: number;
+    red?: number;
+    green?: number;
+    blue?: number;
+    order?: number;
   }>;
+  onPatchSelect?: (patch: PlacedPatch | null) => void;
+  onPatchUpdate?: (patch: PlacedPatch) => void;
+  placedPatchesFromProps?: PlacedPatch[];
 };
 
-export function InteractiveCanvas({ onPatchesChange, parsedPatches }: InteractiveCanvasProps) {
+export function InteractiveCanvas({
+  onPatchesChange,
+  parsedPatches,
+  onPatchSelect,
+  onPatchUpdate,
+  placedPatchesFromProps
+}: InteractiveCanvasProps) {
   const [stageSize, setStageSize] = useState({ width: 500, height: 500 });
   const [placedPatches, setPlacedPatches] = useState<PlacedPatch[]>([]);
+  const [selectedPatchId, setSelectedPatchId] = useState<string | null>(null);
   const [images, setImages] = useState<Record<string, HTMLImageElement>>({});
   const stageRef = useRef<any>(null);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -67,6 +90,14 @@ export function InteractiveCanvas({ onPatchesChange, parsedPatches }: Interactiv
     }
   }, [placedPatches, onPatchesChange]);
 
+  // Notify parent component when selected patch changes
+  useEffect(() => {
+    if (onPatchSelect) {
+      const selectedPatch = placedPatches.find(p => p.id === selectedPatchId) || null;
+      onPatchSelect(selectedPatch);
+    }
+  }, [selectedPatchId, placedPatches, onPatchSelect]);
+
   // Handle parsed patches from API response
   useEffect(() => {
     if (!parsedPatches || parsedPatches.length === 0) return;
@@ -89,12 +120,31 @@ export function InteractiveCanvas({ onPatchesChange, parsedPatches }: Interactiv
         isDragging: false,
         rotation: patch.rotation || 0,
         scale: patch.scale || 1,
-        library: library
+        library: library,
+        squeeze: patch.squeeze,
+        shear: patch.shear,
+        red: patch.red,
+        green: patch.green,
+        blue: patch.blue,
+        order: patch.order
       };
     });
 
+    // Sort patches by order if available
+    const sortedPatches = [...patchesToAdd].sort((a, b) => {
+      // If both have order, sort by order
+      if (a.order !== undefined && b.order !== undefined) {
+        return a.order - b.order;
+      }
+      // If only one has order, put the one with order first
+      if (a.order !== undefined) return -1;
+      if (b.order !== undefined) return 1;
+      // If neither has order, keep original order
+      return 0;
+    });
+
     // Load images for the patches
-    patchesToAdd.forEach(patch => {
+    sortedPatches.forEach(patch => {
       if (!images[patch.src]) {
         const img = new window.Image();
         img.src = patch.src;
@@ -108,10 +158,61 @@ export function InteractiveCanvas({ onPatchesChange, parsedPatches }: Interactiv
     });
 
     // Set the patches directly without triggering the other useEffect
-    setPlacedPatches(patchesToAdd);
+    setPlacedPatches(sortedPatches);
     // Manually notify parent since we're bypassing the internal update flag
-    onPatchesChange(patchesToAdd);
+    onPatchesChange(sortedPatches);
   }, [parsedPatches]);
+
+  // Handle updates from PropertyEditor via placedPatchesFromProps
+  useEffect(() => {
+    if (!placedPatchesFromProps) return;
+
+    // Check if the patches have actually changed to avoid infinite loops
+    const currentPatchesJson = JSON.stringify(placedPatches);
+    const newPatchesJson = JSON.stringify(placedPatchesFromProps);
+
+    if (currentPatchesJson !== newPatchesJson) {
+      console.log("Updating patches from props:", placedPatchesFromProps);
+      setPlacedPatches(placedPatchesFromProps);
+
+      // If a patch is selected, update the selected patch ID
+      if (selectedPatchId) {
+        const selectedPatch = placedPatchesFromProps.find(p => p.id === selectedPatchId);
+        if (!selectedPatch) {
+          // If the selected patch was removed, clear the selection
+          setSelectedPatchId(null);
+        }
+      }
+    }
+  }, [placedPatchesFromProps]);
+
+  // Load images for all patches
+  useEffect(() => {
+    placedPatches.forEach(patch => {
+      if (!images[patch.src]) {
+        const img = new window.Image();
+        img.src = patch.src;
+        img.onload = () => {
+          setImages(prev => ({ ...prev, [patch.src]: img }));
+        };
+        img.onerror = () => {
+          console.error(`Failed to load image: ${patch.src}`);
+        };
+      }
+    });
+  }, [placedPatches, images]);
+
+  // Handle keyboard events for deleting selected patch
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if ((e.key === 'Delete' || e.key === 'Backspace') && selectedPatchId) {
+        removePatch(selectedPatchId);
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [selectedPatchId]);
 
   // Convert canvas coordinates to the -1 to 1 coordinate system
   const canvasToCoord = (pos: number, size: number, isYAxis: boolean = false): number => {
@@ -192,6 +293,29 @@ export function InteractiveCanvas({ onPatchesChange, parsedPatches }: Interactiv
     );
   };
 
+  // Select a patch
+  const handlePatchSelect = (id: string) => {
+    // If the patch is already selected, deselect it
+    if (selectedPatchId === id) {
+      setSelectedPatchId(null);
+    } else {
+      setSelectedPatchId(id);
+    }
+  };
+
+  // Update a patch's properties
+  const updatePatch = (updatedPatch: PlacedPatch) => {
+    internalUpdate.current = true;
+    setPlacedPatches(prev =>
+      prev.map(p => (p.id === updatedPatch.id ? updatedPatch : p))
+    );
+
+    // Call the onPatchUpdate prop if provided
+    if (onPatchUpdate) {
+      onPatchUpdate(updatedPatch);
+    }
+  };
+
   // Handle dropping a patch from the library onto the canvas
   const handleDrop = (e: React.DragEvent<HTMLDivElement>) => {
     e.preventDefault();
@@ -222,6 +346,9 @@ export function InteractiveCanvas({ onPatchesChange, parsedPatches }: Interactiv
   const removePatch = (id: string) => {
     internalUpdate.current = true;
     setPlacedPatches(prev => prev.filter(p => p.id !== id));
+    if (selectedPatchId === id) {
+      setSelectedPatchId(null);
+    }
     toast.success("Patch removed from canvas");
   };
 
@@ -229,7 +356,7 @@ export function InteractiveCanvas({ onPatchesChange, parsedPatches }: Interactiv
     <div className="w-full space-y-4">
       <h3 className="text-lg font-medium">Interactive Canvas</h3>
       <p className="text-sm text-gray-600">
-        Drag patches to position them. Click to remove.
+        Drag patches to position them. Click to select.
       </p>
 
       <div
@@ -242,6 +369,12 @@ export function InteractiveCanvas({ onPatchesChange, parsedPatches }: Interactiv
           ref={stageRef}
           width={stageSize.width}
           height={stageSize.height}
+          onClick={(e) => {
+            // Deselect when clicking on empty canvas area
+            if (e.target === e.currentTarget) {
+              setSelectedPatchId(null);
+            }
+          }}
         >
           <Layer>
             {/* Background */}
@@ -325,28 +458,43 @@ export function InteractiveCanvas({ onPatchesChange, parsedPatches }: Interactiv
               const maxSize = Math.min(stageSize.width, stageSize.height) / 5;
               const scale = Math.min(maxSize / img.width, maxSize / img.height);
 
+              // Create a transform object for squeeze and shear
+              const scaleX = (patch.squeeze !== undefined) ? 1 - patch.squeeze : 1;
+              const scaleY = (patch.squeeze !== undefined) ? 1 + patch.squeeze : 1;
+              const skewX = (patch.shear !== undefined) ? patch.shear : 0;
+
               return (
                 <Group
-                  key={patch.id}
+                  key={`${patch.id}-${patch.x}-${patch.y}-${patch.rotation}-${patch.scale}-${patch.squeeze}-${patch.shear}-${patch.red}-${patch.green}-${patch.blue}`}
                   x={x}
                   y={y}
                   draggable
                   rotation={patch.rotation ? -patch.rotation : 0} // Negate rotation to account for flipped coordinates
+                  scaleX={scaleX * (patch.scale || 1)}
+                  scaleY={scaleY * (patch.scale || 1)}
+                  skewX={skewX}
                   onDragStart={() => handleDragStart(patch.id)}
                   onDragEnd={(e) => handleDragEnd(patch.id, e.target.x(), e.target.y())}
-                  onClick={() => removePatch(patch.id)}
-                  onTap={() => removePatch(patch.id)}
+                  onClick={() => handlePatchSelect(patch.id)}
+                  onTap={() => handlePatchSelect(patch.id)}
+                  opacity={selectedPatchId === patch.id ? 1 : 0.75}
+                  stroke={selectedPatchId === patch.id ? "#3b82f6" : undefined}
+                  strokeWidth={selectedPatchId === patch.id ? 2 : 0}
                 >
                   <KonvaImage
                     image={img}
-                    width={img.width * scale * (patch.scale || 1)}
-                    height={img.height * scale * (patch.scale || 1)}
-                    offsetX={img.width * scale * (patch.scale || 1) / 2}
-                    offsetY={img.height * scale * (patch.scale || 1) / 2}
-                    opacity={patch.isDragging ? 0.7 : 1}
+                    width={img.width * scale}
+                    height={img.height * scale}
+                    offsetX={img.width * scale / 2}
+                    offsetY={img.height * scale / 2}
+                    opacity={patch.isDragging ? 0.7 : 0.75} // Default opacity 0.75
                     shadowColor="black"
                     shadowBlur={patch.isDragging ? 10 : 0}
                     shadowOpacity={patch.isDragging ? 0.3 : 0}
+                    filters={[Konva.Filters.RGB]}
+                    red={patch.red !== undefined ? patch.red : 0}
+                    green={patch.green !== undefined ? patch.green : 0}
+                    blue={patch.blue !== undefined ? patch.blue : 1}
                   />
                 </Group>
               );
@@ -354,11 +502,20 @@ export function InteractiveCanvas({ onPatchesChange, parsedPatches }: Interactiv
           </Layer>
         </Stage>
 
-        <div className="absolute bottom-2 right-2">
+        <div className="absolute bottom-2 right-2 flex space-x-2">
+          {selectedPatchId && (
+            <button
+              onClick={() => removePatch(selectedPatchId)}
+              className="rounded-md bg-red-100 px-2 py-1 text-xs text-red-700 hover:bg-red-200"
+            >
+              Remove Selected
+            </button>
+          )}
           <button
             onClick={() => {
               internalUpdate.current = true;
               setPlacedPatches([]);
+              setSelectedPatchId(null);
             }}
             className="rounded-md bg-red-100 px-2 py-1 text-xs text-red-700 hover:bg-red-200"
           >
@@ -368,7 +525,7 @@ export function InteractiveCanvas({ onPatchesChange, parsedPatches }: Interactiv
       </div>
 
       <p className="text-xs text-gray-500">
-        Click on a patch to remove it. Drag patches to reposition them.
+        Click on a patch to select it. Press Delete key to remove selected patch.
       </p>
     </div>
   );

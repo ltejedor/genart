@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import { PatchLibrary, type Patch, type PatchLibrary as PatchLibraryType } from "./PatchLibrary";
 import { InteractiveCanvas, type PlacedPatch } from "./InteractiveCanvas";
+import { PropertyEditor } from "./PropertyEditor";
 import toast from "react-hot-toast";
 
 export type CanvasData = {
@@ -18,6 +19,12 @@ type CanvasEditorProps = {
     rotation?: number;
     scale?: number;
     library?: string;
+    squeeze?: number;
+    shear?: number;
+    red?: number;
+    green?: number;
+    blue?: number;
+    order?: number;
   }>;
   selectedLibrary?: PatchLibraryType;
   onLibraryChange?: (library: PatchLibraryType) => void;
@@ -25,6 +32,7 @@ type CanvasEditorProps = {
 
 export function CanvasEditor({ onCanvasDataChange, parsedPatches, selectedLibrary = "animals", onLibraryChange }: CanvasEditorProps) {
   const [placedPatches, setPlacedPatches] = useState<PlacedPatch[]>([]);
+  const [selectedPatch, setSelectedPatch] = useState<PlacedPatch | null>(null);
 
   // Handle library change
   const handleLibraryChange = (library: PatchLibraryType) => {
@@ -34,7 +42,7 @@ export function CanvasEditor({ onCanvasDataChange, parsedPatches, selectedLibrar
   };
 
   // Handle patch selection from the library
-  const handlePatchSelect = (patch: Patch) => {
+  const handleLibraryPatchSelect = (patch: Patch) => {
     // Check if the patch is from a different library than the currently placed patches
     const shouldClearCanvas = placedPatches.length > 0 &&
       placedPatches.some(p => {
@@ -71,6 +79,25 @@ export function CanvasEditor({ onCanvasDataChange, parsedPatches, selectedLibrar
     onCanvasDataChange({ patches: updatedPatches });
   };
 
+  // Handle patch selection from the canvas
+  const handlePatchSelect = (patch: PlacedPatch | null) => {
+    setSelectedPatch(patch);
+  };
+
+  // Handle patch property updates from the PropertyEditor
+  const handlePatchUpdate = (updatedPatch: PlacedPatch) => {
+    const updatedPatches = placedPatches.map(p => 
+      p.id === updatedPatch.id ? updatedPatch : p
+    );
+    setPlacedPatches(updatedPatches);
+    onCanvasDataChange({ patches: updatedPatches });
+    
+    // Update selected patch if it's the one being modified
+    if (selectedPatch && selectedPatch.id === updatedPatch.id) {
+      setSelectedPatch(updatedPatch);
+    }
+  };
+
   // Handle patches change from the canvas
   const handlePatchesChange = (patches: PlacedPatch[]) => {
     // Only update if the patches have actually changed
@@ -78,6 +105,12 @@ export function CanvasEditor({ onCanvasDataChange, parsedPatches, selectedLibrar
     if (JSON.stringify(patches) !== JSON.stringify(placedPatches)) {
       setPlacedPatches(patches);
       onCanvasDataChange({ patches });
+      
+      // Update selected patch if it's still in the patches array
+      if (selectedPatch) {
+        const updatedSelectedPatch = patches.find(p => p.id === selectedPatch.id);
+        setSelectedPatch(updatedSelectedPatch || null);
+      }
     }
   };
 
@@ -97,13 +130,24 @@ export function CanvasEditor({ onCanvasDataChange, parsedPatches, selectedLibrar
         <InteractiveCanvas
           onPatchesChange={handlePatchesChange}
           parsedPatches={parsedPatches}
+          onPatchSelect={handlePatchSelect}
+          onPatchUpdate={handlePatchUpdate}
+          placedPatchesFromProps={placedPatches}
         />
       </div>
 
-      {/* Patch Library directly below */}
+      {/* Property Editor in the middle */}
+      <div>
+        <PropertyEditor
+          selectedPatch={selectedPatch}
+          onPatchUpdate={handlePatchUpdate}
+        />
+      </div>
+
+      {/* Patch Library at the bottom */}
       <div className="bg-white rounded-lg border border-gray-200 p-4">
         <PatchLibrary
-          onPatchSelect={handlePatchSelect}
+          onPatchSelect={handleLibraryPatchSelect}
           selectedLibrary={selectedLibrary}
           onLibraryChange={handleLibraryChange}
         />
