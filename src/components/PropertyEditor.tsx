@@ -15,7 +15,10 @@ export function PropertyEditor({ selectedPatch, onPatchUpdate }: PropertyEditorP
   const [scale, setScale] = useState(1);
   const [squeeze, setSqueeze] = useState(0);
   const [shear, setShear] = useState(0);
-  const [colors, setColors] = useState({ red: 1, green: 1, blue: 1 });
+  const [red, setRed] = useState(0);
+  const [green, setGreen] = useState(0);
+  const [blue, setBlue] = useState(0);
+  const [alpha, setAlpha] = useState(0);
 
   // Update local state when selected patch changes
   useEffect(() => {
@@ -25,11 +28,10 @@ export function PropertyEditor({ selectedPatch, onPatchUpdate }: PropertyEditorP
       setScale(selectedPatch.scale || 1);
       setSqueeze(selectedPatch.squeeze || 0);
       setShear(selectedPatch.shear || 0);
-      setColors({
-        red: selectedPatch.red !== undefined ? selectedPatch.red : 1,
-        green: selectedPatch.green !== undefined ? selectedPatch.green : 1,
-        blue: selectedPatch.blue !== undefined ? selectedPatch.blue : 1,
-      });
+      setRed(selectedPatch.red !== undefined ? selectedPatch.red : 0);
+      setGreen(selectedPatch.green !== undefined ? selectedPatch.green : 0);
+      setBlue(selectedPatch.blue !== undefined ? selectedPatch.blue: 0);
+      setAlpha(selectedPatch.alpha !== undefined ? selectedPatch.alpha : 0);
     }
   }, [selectedPatch]);
 
@@ -65,16 +67,20 @@ export function PropertyEditor({ selectedPatch, onPatchUpdate }: PropertyEditorP
         updatedPatch = { ...selectedPatch, shear: value };
         break;
       case "red":
-        setColors(prev => ({ ...prev, red: value }));
+        setRed(value);
         updatedPatch = { ...selectedPatch, red: value };
         break;
       case "green":
-        setColors(prev => ({ ...prev, green: value }));
+        setGreen(value);
         updatedPatch = { ...selectedPatch, green: value };
         break;
       case "blue":
-        setColors(prev => ({ ...prev, blue: value }));
+        setBlue(value);
         updatedPatch = { ...selectedPatch, blue: value };
+        break;
+      case "alpha":
+        setAlpha(value);
+        updatedPatch = { ...selectedPatch, alpha: value };
         break;
       default:
         return;
@@ -95,7 +101,7 @@ export function PropertyEditor({ selectedPatch, onPatchUpdate }: PropertyEditorP
   return (
     <div className="bg-white rounded-lg border border-gray-200 p-4">
       <h3 className="text-lg font-medium mb-4">Patch Properties</h3>
-      
+
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         {/* Position Controls */}
         <div className="space-y-2">
@@ -188,38 +194,53 @@ export function PropertyEditor({ selectedPatch, onPatchUpdate }: PropertyEditorP
         <div className="space-y-2">
           <h4 className="font-medium text-sm">Color Adjustments</h4>
           <div className="space-y-1">
-            <label className="block text-xs text-gray-600">Red ({colors.red.toFixed(2)})</label>
+            <label className="block text-xs text-gray-600">Red({red.toFixed(2)})</label>
             <input
               type="range"
               min="0"
-              max="2"
-              step="0.05"
-              value={colors.red}
+              max="256"
+              step="1"
+              value={red}
               onChange={(e) => handlePropertyChange("red", parseFloat(e.target.value))}
-              className="w-full accent-red-500"
+              className="w-full accent-blue-500"
             />
           </div>
+
           <div className="space-y-1">
-            <label className="block text-xs text-gray-600">Green ({colors.green.toFixed(2)})</label>
+            <label className="block text-xs text-gray-600">Green({green.toFixed(2)})</label>
             <input
               type="range"
               min="0"
-              max="2"
-              step="0.05"
-              value={colors.green}
+              max="256"
+              step="1"
+              value={green}
               onChange={(e) => handlePropertyChange("green", parseFloat(e.target.value))}
-              className="w-full accent-green-500"
+              className="w-full accent-blue-500"
             />
           </div>
+
           <div className="space-y-1">
-            <label className="block text-xs text-gray-600">Blue ({colors.blue.toFixed(2)})</label>
+            <label className="block text-xs text-gray-600">Blue({blue.toFixed(2)})</label>
             <input
               type="range"
               min="0"
-              max="2"
-              step="0.05"
-              value={colors.blue}
+              max="256"
+              step="1"
+              value={blue}
               onChange={(e) => handlePropertyChange("blue", parseFloat(e.target.value))}
+              className="w-full accent-blue-500"
+            />
+          </div>
+
+          <div className="space-y-1">
+            <label className="block text-xs text-gray-600">Alpha({alpha.toFixed(2)})</label>
+            <input
+              type="range"
+              min="-1"
+              max="1"
+              step="0.1"
+              value={alpha}
+              onChange={(e) => handlePropertyChange("alpha", parseFloat(e.target.value))}
               className="w-full accent-blue-500"
             />
           </div>

@@ -22,6 +22,7 @@ export type PlacedPatch = {
   red?: number;
   green?: number;
   blue?: number;
+  alpha?: number;
   order?: number;
 };
 
@@ -40,6 +41,7 @@ type InteractiveCanvasProps = {
     red?: number;
     green?: number;
     blue?: number;
+    alpha?: number;
     order?: number;
   }>;
   onPatchSelect?: (patch: PlacedPatch | null) => void;
@@ -61,6 +63,7 @@ export function InteractiveCanvas({
   const stageRef = useRef<any>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const internalUpdate = useRef(false);
+  const imageRefs = useRef<Record<string, Konva.Image>>({});
 
   // Handle window resize to make the canvas responsive
   useEffect(() => {
@@ -126,6 +129,7 @@ export function InteractiveCanvas({
         red: patch.red,
         green: patch.green,
         blue: patch.blue,
+        alpha: patch.alpha,
         order: patch.order
       };
     });
@@ -150,6 +154,13 @@ export function InteractiveCanvas({
         img.src = patch.src;
         img.onload = () => {
           setImages(prev => ({ ...prev, [patch.src]: img }));
+          // Cache the image after it's loaded and added to the canvas
+          setTimeout(() => {
+            const imageNode = imageRefs.current[patch.id];
+            if (imageNode) {
+              imageNode.cache();
+            }
+          }, 50);
         };
         img.onerror = () => {
           console.error(`Failed to load image: ${patch.src}`);
@@ -194,6 +205,13 @@ export function InteractiveCanvas({
         img.src = patch.src;
         img.onload = () => {
           setImages(prev => ({ ...prev, [patch.src]: img }));
+          // Cache the image after it's loaded and added to the canvas
+          setTimeout(() => {
+            const imageNode = imageRefs.current[patch.id];
+            if (imageNode) {
+              imageNode.cache();
+            }
+          }, 50);
         };
         img.onerror = () => {
           console.error(`Failed to load image: ${patch.src}`);
@@ -465,7 +483,7 @@ export function InteractiveCanvas({
 
               return (
                 <Group
-                  key={`${patch.id}-${patch.x}-${patch.y}-${patch.rotation}-${patch.scale}-${patch.squeeze}-${patch.shear}-${patch.red}-${patch.green}-${patch.blue}`}
+                  key={`${patch.id}-${patch.x}-${patch.y}-${patch.rotation}-${patch.scale}-${patch.squeeze}-${patch.shear}-${patch.red}-${patch.green}-${patch.blue}-${patch.alpha}`}
                   x={x}
                   y={y}
                   draggable
@@ -482,6 +500,12 @@ export function InteractiveCanvas({
                   strokeWidth={selectedPatchId === patch.id ? 2 : 0}
                 >
                   <KonvaImage
+                    ref={(node) => {
+                      if (node) {
+                        imageRefs.current[patch.id] = node;
+                        node.cache();
+                      }
+                    }}
                     image={img}
                     width={img.width * scale}
                     height={img.height * scale}
@@ -491,10 +515,11 @@ export function InteractiveCanvas({
                     shadowColor="black"
                     shadowBlur={patch.isDragging ? 10 : 0}
                     shadowOpacity={patch.isDragging ? 0.3 : 0}
-                    filters={[Konva.Filters.RGB]}
+                    filters={[Konva.Filters.RGBA]}
                     red={patch.red !== undefined ? patch.red : 0}
                     green={patch.green !== undefined ? patch.green : 0}
-                    blue={patch.blue !== undefined ? patch.blue : 1}
+                    blue={patch.blue !== undefined ? patch.blue : 0}
+                    alpha={patch.alpha !== undefined ? patch.alpha : 0}
                   />
                 </Group>
               );

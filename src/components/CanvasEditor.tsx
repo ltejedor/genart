@@ -24,6 +24,7 @@ type CanvasEditorProps = {
     red?: number;
     green?: number;
     blue?: number;
+    alpha?: number;
     order?: number;
   }>;
   selectedLibrary?: PatchLibraryType;
@@ -86,12 +87,12 @@ export function CanvasEditor({ onCanvasDataChange, parsedPatches, selectedLibrar
 
   // Handle patch property updates from the PropertyEditor
   const handlePatchUpdate = (updatedPatch: PlacedPatch) => {
-    const updatedPatches = placedPatches.map(p => 
+    const updatedPatches = placedPatches.map(p =>
       p.id === updatedPatch.id ? updatedPatch : p
     );
     setPlacedPatches(updatedPatches);
     onCanvasDataChange({ patches: updatedPatches });
-    
+
     // Update selected patch if it's the one being modified
     if (selectedPatch && selectedPatch.id === updatedPatch.id) {
       setSelectedPatch(updatedPatch);
@@ -105,7 +106,7 @@ export function CanvasEditor({ onCanvasDataChange, parsedPatches, selectedLibrar
     if (JSON.stringify(patches) !== JSON.stringify(placedPatches)) {
       setPlacedPatches(patches);
       onCanvasDataChange({ patches });
-      
+
       // Update selected patch if it's still in the patches array
       if (selectedPatch) {
         const updatedSelectedPatch = patches.find(p => p.id === selectedPatch.id);
