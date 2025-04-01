@@ -84,10 +84,9 @@ export function PatchLibrary({ onPatchSelect, selectedLibrary, onLibraryChange }
 
   return (
     <div className="w-full">
-      <h3 className="mb-2 text-lg font-medium">Patch Library</h3>
 
-      <Tab.Group 
-        selectedIndex={selectedIndex} 
+      <Tab.Group
+        selectedIndex={selectedIndex}
         onChange={(index) => {
           const libraries = Object.keys(LIBRARY_METADATA) as PatchLibrary[];
           handleLibraryChange(libraries[index]);

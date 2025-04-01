@@ -110,8 +110,8 @@ export function PropertyEditor({ selectedPatch, onPatchUpdate }: PropertyEditorP
             <label className="block text-xs text-gray-600">X Position ({position.x.toFixed(2)})</label>
             <input
               type="range"
-              min="-1"
-              max="1"
+              min="-1.25"
+              max="1.25"
               step="0.01"
               value={position.x}
               onChange={(e) => handlePropertyChange("x", parseFloat(e.target.value))}
@@ -122,8 +122,8 @@ export function PropertyEditor({ selectedPatch, onPatchUpdate }: PropertyEditorP
             <label className="block text-xs text-gray-600">Y Position ({position.y.toFixed(2)})</label>
             <input
               type="range"
-              min="-1"
-              max="1"
+              min="-1.25"
+              max="1.25"
               step="0.01"
               value={position.y}
               onChange={(e) => handlePropertyChange("y", parseFloat(e.target.value))}
@@ -152,7 +152,7 @@ export function PropertyEditor({ selectedPatch, onPatchUpdate }: PropertyEditorP
             <input
               type="range"
               min="0.1"
-              max="3"
+              max="4"
               step="0.05"
               value={scale}
               onChange={(e) => handlePropertyChange("scale", parseFloat(e.target.value))}
@@ -236,7 +236,7 @@ export function PropertyEditor({ selectedPatch, onPatchUpdate }: PropertyEditorP
             <label className="block text-xs text-gray-600">Alpha({alpha.toFixed(2)})</label>
             <input
               type="range"
-              min="-1"
+              min="0"
               max="1"
               step="0.1"
               value={alpha}

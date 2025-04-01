@@ -7,11 +7,10 @@ import { Toaster } from "react-hot-toast";
 import { TRPCReactProvider } from "@/trpc/react";
 
 export const metadata: Metadata = {
-  title: "App",
-  description: "",
+  title: "Mosaic by Mechifact",
+  description: "Create beautiful mosaic art using AI-powered image patch generation and arrangement",
   icons: [
-    // place favicon.ico in public folder and uncomment the following line
-    // { rel: "icon", url: "/favicon.ico" }
+    { rel: "icon", url: "/favicon.ico" }
   ],
 };
 
@@ -19,8 +18,16 @@ export default function RootLayout({
   children,
 }: Readonly<{ children: React.ReactNode }>) {
   return (
-    <html lang="en" className={`${GeistSans.variable}`}>
+    <html lang="en" className={`${GeistSans.variable} bg-slate-50`}>
       <body>
+        <header className="border-b border-slate-200 bg-white py-4">
+          <div className="container mx-auto px-4 flex items-center">
+            <div className="flex items-center">
+              <img src="/logo.svg" alt="Mosaic by Mechifact" className="h-8 w-8 mr-2" />
+              <span className="text-xl font-bold text-blue-600">Mosaic by Mechifact</span>
+            </div>
+          </div>
+        </header>
         <TRPCReactProvider>
           {children}
           <Toaster />

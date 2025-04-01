@@ -127,7 +127,8 @@ export function CanvasEditor({ onCanvasDataChange, parsedPatches, selectedLibrar
     <div className="space-y-6 w-full">
 
       {/* Interactive Canvas at the top */}
-      <div className="bg-white rounded-lg border border-gray-200 p-4">
+      <div className="mosaic-card p-4">
+        <h2 className="text-xl font-semibold mb-4 text-blue-600">Canvas</h2>
         <InteractiveCanvas
           onPatchesChange={handlePatchesChange}
           parsedPatches={parsedPatches}
@@ -138,7 +139,8 @@ export function CanvasEditor({ onCanvasDataChange, parsedPatches, selectedLibrar
       </div>
 
       {/* Property Editor in the middle */}
-      <div>
+      <div className="mosaic-card p-4">
+        <h2 className="text-xl font-semibold mb-4 text-blue-600">Patch Properties</h2>
         <PropertyEditor
           selectedPatch={selectedPatch}
           onPatchUpdate={handlePatchUpdate}
@@ -146,7 +148,8 @@ export function CanvasEditor({ onCanvasDataChange, parsedPatches, selectedLibrar
       </div>
 
       {/* Patch Library at the bottom */}
-      <div className="bg-white rounded-lg border border-gray-200 p-4">
+      <div className="mosaic-card p-4">
+        <h2 className="text-xl font-semibold mb-4 text-blue-600">Patch Library</h2>
         <PatchLibrary
           onPatchSelect={handleLibraryPatchSelect}
           selectedLibrary={selectedLibrary}

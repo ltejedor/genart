@@ -69,10 +69,12 @@ export function InteractiveCanvas({
   useEffect(() => {
     const updateSize = () => {
       if (containerRef.current) {
-        const width = containerRef.current.offsetWidth;
-        // Make height proportional but with a minimum
-        const height = Math.max(width * 0.75, 350);
-        setStageSize({ width, height });
+        // Get the container width
+        const containerWidth = containerRef.current.offsetWidth;
+        // Set both width and height to the same value to create a square
+        // Use a minimum size to ensure visibility
+        const size = Math.max(containerWidth, 350);
+        setStageSize({ width: size, height: size });
       }
     };
 
@@ -372,160 +374,158 @@ export function InteractiveCanvas({
 
   return (
     <div className="w-full space-y-4">
-      <h3 className="text-lg font-medium">Interactive Canvas</h3>
-      <p className="text-sm text-gray-600">
-        Drag patches to position them. Click to select.
-      </p>
 
       <div
         ref={containerRef}
-        className="relative rounded-md border border-gray-300 bg-white"
+        className="relative rounded-md border border-gray-300 bg-white flex justify-center"
         onDrop={handleDrop}
         onDragOver={handleDragOver}
       >
-        <Stage
-          ref={stageRef}
-          width={stageSize.width}
-          height={stageSize.height}
-          onClick={(e) => {
-            // Deselect when clicking on empty canvas area
-            if (e.target === e.currentTarget) {
-              setSelectedPatchId(null);
-            }
-          }}
-        >
-          <Layer>
-            {/* Background */}
-            <Rect
-              x={0}
-              y={0}
-              width={stageSize.width}
-              height={stageSize.height}
-              fill="#f9fafb"
-            />
+        <div className="relative" style={{ aspectRatio: '1/1', width: '100%', maxWidth: `${stageSize.width}px` }}>
+          <Stage
+            ref={stageRef}
+            width={stageSize.width}
+            height={stageSize.height}
+            onClick={(e) => {
+              // Deselect when clicking on empty canvas area
+              if (e.target === e.currentTarget) {
+                setSelectedPatchId(null);
+              }
+            }}
+          >
+            <Layer>
+              {/* Background */}
+              <Rect
+                x={0}
+                y={0}
+                width={stageSize.width}
+                height={stageSize.height}
+                fill="#f9fafb"
+              />
 
-            {/* Grid lines */}
-            <Line
-              points={[stageSize.width / 2, 0, stageSize.width / 2, stageSize.height]}
-              stroke="#e5e7eb"
-              strokeWidth={1}
-            />
-            <Line
-              points={[0, stageSize.height / 2, stageSize.width, stageSize.height / 2]}
-              stroke="#e5e7eb"
-              strokeWidth={1}
-            />
+              {/* Grid lines */}
+              <Line
+                points={[stageSize.width / 2, 0, stageSize.width / 2, stageSize.height]}
+                stroke="#e5e7eb"
+                strokeWidth={1}
+              />
+              <Line
+                points={[0, stageSize.height / 2, stageSize.width, stageSize.height / 2]}
+                stroke="#e5e7eb"
+                strokeWidth={1}
+              />
 
-            {/* Coordinate labels */}
-            <Text
-              x={stageSize.width - 20}
-              y={stageSize.height / 2 + 5}
-              text="1"
-              fontSize={12}
-              fill="#6b7280"
-            />
-            <Text
-              x={5}
-              y={stageSize.height / 2 + 5}
-              text="-1"
-              fontSize={12}
-              fill="#6b7280"
-            />
-            <Text
-              x={stageSize.width / 2 + 5}
-              y={5}
-              text="-1"
-              fontSize={12}
-              fill="#6b7280"
-            />
-            <Text
-              x={stageSize.width / 2 + 5}
-              y={stageSize.height - 20}
-              text="1"
-              fontSize={12}
-              fill="#6b7280"
-            />
+              {/* Coordinate labels */}
+              <Text
+                x={stageSize.width - 20}
+                y={stageSize.height / 2 + 5}
+                text="1"
+                fontSize={12}
+                fill="#6b7280"
+              />
+              <Text
+                x={5}
+                y={stageSize.height / 2 + 5}
+                text="-1"
+                fontSize={12}
+                fill="#6b7280"
+              />
+              <Text
+                x={stageSize.width / 2 + 5}
+                y={5}
+                text="-1"
+                fontSize={12}
+                fill="#6b7280"
+              />
+              <Text
+                x={stageSize.width / 2 + 5}
+                y={stageSize.height - 20}
+                text="1"
+                fontSize={12}
+                fill="#6b7280"
+              />
 
-            {/* Informational text when no patches are placed */}
-            {placedPatches.length === 0 && (
-              <Group>
-                <Text
-                  x={stageSize.width / 2 - 190}
-                  y={stageSize.height / 2 - 40}
-                  width={380}
-                  text="Place patches on canvas, or they'll be placed randomly when generation begins."
-                  fontSize={14}
-                  fontStyle="normal"
-                  fill="#4B5563"
-                  align="center"
-                  wrap="word"
-                />
-              </Group>
-            )}
-
-            {/* Placed patches */}
-            {placedPatches.map((patch) => {
-              const img = images[patch.src];
-              if (!img) return null;
-
-              // Convert -1 to 1 coordinates to canvas coordinates
-              const x = coordToCanvas(patch.x, stageSize.width, false);
-              const y = coordToCanvas(patch.y, stageSize.height, true);
-
-              // Calculate image size (scaled down to fit nicely on canvas)
-              const maxSize = Math.min(stageSize.width, stageSize.height) / 5;
-              const scale = Math.min(maxSize / img.width, maxSize / img.height);
-
-              // Create a transform object for squeeze and shear
-              const scaleX = (patch.squeeze !== undefined) ? 1 - patch.squeeze : 1;
-              const scaleY = (patch.squeeze !== undefined) ? 1 + patch.squeeze : 1;
-              const skewX = (patch.shear !== undefined) ? patch.shear : 0;
-
-              return (
-                <Group
-                  key={`${patch.id}-${patch.x}-${patch.y}-${patch.rotation}-${patch.scale}-${patch.squeeze}-${patch.shear}-${patch.red}-${patch.green}-${patch.blue}-${patch.alpha}`}
-                  x={x}
-                  y={y}
-                  draggable
-                  rotation={patch.rotation ? -patch.rotation : 0} // Negate rotation to account for flipped coordinates
-                  scaleX={scaleX * (patch.scale || 1)}
-                  scaleY={scaleY * (patch.scale || 1)}
-                  skewX={skewX}
-                  onDragStart={() => handleDragStart(patch.id)}
-                  onDragEnd={(e) => handleDragEnd(patch.id, e.target.x(), e.target.y())}
-                  onClick={() => handlePatchSelect(patch.id)}
-                  onTap={() => handlePatchSelect(patch.id)}
-                  opacity={selectedPatchId === patch.id ? 1 : 0.75}
-                  stroke={selectedPatchId === patch.id ? "#3b82f6" : undefined}
-                  strokeWidth={selectedPatchId === patch.id ? 2 : 0}
-                >
-                  <KonvaImage
-                    ref={(node) => {
-                      if (node) {
-                        imageRefs.current[patch.id] = node;
-                        node.cache();
-                      }
-                    }}
-                    image={img}
-                    width={img.width * scale}
-                    height={img.height * scale}
-                    offsetX={img.width * scale / 2}
-                    offsetY={img.height * scale / 2}
-                    opacity={patch.isDragging ? 0.7 : 0.75} // Default opacity 0.75
-                    shadowColor="black"
-                    shadowBlur={patch.isDragging ? 10 : 0}
-                    shadowOpacity={patch.isDragging ? 0.3 : 0}
-                    filters={[Konva.Filters.RGBA]}
-                    red={patch.red !== undefined ? patch.red : 0}
-                    green={patch.green !== undefined ? patch.green : 0}
-                    blue={patch.blue !== undefined ? patch.blue : 0}
-                    alpha={patch.alpha !== undefined ? patch.alpha : 0}
+              {/* Informational text when no patches are placed */}
+              {placedPatches.length === 0 && (
+                <Group>
+                  <Text
+                    x={stageSize.width / 2 - 190}
+                    y={stageSize.height / 2 - 40}
+                    width={380}
+                    text="Place patches on canvas, or they'll be placed randomly when generation begins."
+                    fontSize={14}
+                    fontStyle="normal"
+                    fill="#4B5563"
+                    align="center"
+                    wrap="word"
                   />
                 </Group>
-              );
-            })}
-          </Layer>
-        </Stage>
+              )}
+
+              {/* Placed patches */}
+              {placedPatches.map((patch) => {
+                const img = images[patch.src];
+                if (!img) return null;
+
+                // Convert -1 to 1 coordinates to canvas coordinates
+                const x = coordToCanvas(patch.x, stageSize.width, false);
+                const y = coordToCanvas(patch.y, stageSize.height, true);
+
+                // Calculate image size (scaled down to fit nicely on canvas)
+                const maxSize = Math.min(stageSize.width, stageSize.height) / 5;
+                const scale = Math.min(maxSize / img.width, maxSize / img.height);
+
+                // Create a transform object for squeeze and shear
+                const scaleX = (patch.squeeze !== undefined) ? 1 - patch.squeeze : 1;
+                const scaleY = (patch.squeeze !== undefined) ? 1 + patch.squeeze : 1;
+                const skewX = (patch.shear !== undefined) ? patch.shear : 0;
+
+                return (
+                  <Group
+                    key={`${patch.id}-${patch.x}-${patch.y}-${patch.rotation}-${patch.scale}-${patch.squeeze}-${patch.shear}-${patch.red}-${patch.green}-${patch.blue}-${patch.alpha}`}
+                    x={x}
+                    y={y}
+                    draggable
+                    rotation={patch.rotation ? -patch.rotation : 0} // Negate rotation to account for flipped coordinates
+                    scaleX={scaleX * (patch.scale || 1)}
+                    scaleY={scaleY * (patch.scale || 1)}
+                    skewX={skewX}
+                    onDragStart={() => handleDragStart(patch.id)}
+                    onDragEnd={(e) => handleDragEnd(patch.id, e.target.x(), e.target.y())}
+                    onClick={() => handlePatchSelect(patch.id)}
+                    onTap={() => handlePatchSelect(patch.id)}
+                    opacity={selectedPatchId === patch.id ? 1 : 0.75}
+                    stroke={selectedPatchId === patch.id ? "#3b82f6" : undefined}
+                    strokeWidth={selectedPatchId === patch.id ? 2 : 0}
+                  >
+                    <KonvaImage
+                      ref={(node) => {
+                        if (node) {
+                          imageRefs.current[patch.id] = node;
+                          node.cache();
+                        }
+                      }}
+                      image={img}
+                      width={img.width * scale}
+                      height={img.height * scale}
+                      offsetX={img.width * scale / 2}
+                      offsetY={img.height * scale / 2}
+                      opacity={patch.isDragging ? 0.7 : 0.75} // Default opacity 0.75
+                      shadowColor="black"
+                      shadowBlur={patch.isDragging ? 10 : 0}
+                      shadowOpacity={patch.isDragging ? 0.3 : 0}
+                      filters={[Konva.Filters.RGBA]}
+                      red={patch.red !== undefined ? patch.red : 0}
+                      green={patch.green !== undefined ? patch.green : 0}
+                      blue={patch.blue !== undefined ? patch.blue : 0}
+                      alpha={patch.alpha !== undefined ? patch.alpha : 0}
+                    />
+                  </Group>
+                );
+              })}
+            </Layer>
+          </Stage>
+        </div>
 
         <div className="absolute bottom-2 right-2 flex space-x-2">
           {selectedPatchId && (
@@ -548,10 +548,6 @@ export function InteractiveCanvas({
           </button>
         </div>
       </div>
-
-      <p className="text-xs text-gray-500">
-        Click on a patch to select it. Press Delete key to remove selected patch.
-      </p>
     </div>
   );
 }

@@ -47,17 +47,18 @@ export default function Home() {
   return (
     <main className="container mx-auto px-4 py-8">
       <div className="flex flex-col items-center justify-center">
-        <h1 className="mb-8 text-3xl font-bold">AI Vector Graphics Generator</h1>
 
         <div className="mb-8 w-full max-w-7xl grid grid-cols-1 lg:grid-cols-12 gap-6">
           {/* Left Column - Form Controls */}
           <div className="lg:col-span-3">
-            <VectorGraphicsForm
-              canvasData={canvasData}
-              onPatchesVisualize={handlePatchesVisualize}
-              selectedLibrary={selectedLibrary}
-              onLibraryChange={handleLibraryChange}
-            />
+            <div className="mosaic-card p-4">
+              <VectorGraphicsForm
+                canvasData={canvasData}
+                onPatchesVisualize={handlePatchesVisualize}
+                selectedLibrary={selectedLibrary}
+                onLibraryChange={handleLibraryChange}
+              />
+            </div>
           </div>
 
           {/* Middle Column - Canvas and Patch Library */}
@@ -72,13 +73,18 @@ export default function Home() {
 
           {/* Right Column - Results Display */}
           <div className="lg:col-span-4">
-            <div className="bg-white rounded-lg border border-gray-200 p-4">
+            <div className="mosaic-card p-4">
+              <h2 className="text-xl font-semibold mb-4 text-blue-600">Generated Results</h2>
               <div id="results-container">
                 {/* Results will be displayed here by the VectorGraphicsForm component */}
               </div>
             </div>
           </div>
         </div>
+
+        <footer className="mt-12 text-center text-sm text-slate-500">
+          <p>© {new Date().getFullYear()} Mechifact. All rights reserved.</p>
+        </footer>
       </div>
     </main>
   );
