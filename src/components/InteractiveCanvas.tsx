@@ -123,15 +123,15 @@ export function InteractiveCanvas({
         x: patch.x, // Already in -1 to 1 coordinate system
         y: patch.y, // Already in -1 to 1 coordinate system
         isDragging: false,
-        rotation: patch.rotation || 0,
-        scale: patch.scale || 1,
+        rotation: ((patch.rotation! * 55.6635311) % 360),
+        scale: patch.scale,
         library: library,
-        squeeze: patch.squeeze,
-        shear: patch.shear,
-        red: patch.red,
-        green: patch.green,
-        blue: patch.blue,
-        alpha: patch.alpha,
+        squeeze: patch.squeeze * 0.064294401,
+        shear: patch.shear * 0.939783266,
+        red: patch.red * 256,
+        green: patch.green * 256,
+        blue: patch.blue * 256,
+        alpha: patch.alpha || .3,
         order: patch.order
       };
     });
@@ -270,6 +270,7 @@ export function InteractiveCanvas({
       y: canvasToCoord(y, stageSize.height, true),
       isDragging: false,
       library: patch.library,
+      alpha: 0.2, // Set default transparency to 0.2
     };
 
     internalUpdate.current = true;
@@ -472,8 +473,9 @@ export function InteractiveCanvas({
                 const y = coordToCanvas(patch.y, stageSize.height, true);
 
                 // Calculate image size (scaled down to fit nicely on canvas)
-                const maxSize = Math.min(stageSize.width, stageSize.height) / 5;
-                const scale = Math.min(maxSize / img.width, maxSize / img.height);
+                //const maxSize = Math.min(stageSize.width, stageSize.height) / 5;
+                //const scale = Math.min(maxSize / img.width, maxSize / img.height);
+                const scale = .25
 
                 // Create a transform object for squeeze and shear
                 const scaleX = (patch.squeeze !== undefined) ? 1 - patch.squeeze : 1;

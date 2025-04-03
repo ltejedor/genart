@@ -20,6 +20,7 @@ interface RequestBody {
     y: number;
   }>;
   initial_positions?: Array<[string, number, number]>;
+  initial_colours?: Array<[string, number, number, number]>;
   image?: File;
   patch_url?: string;
 }
@@ -50,6 +51,7 @@ export async function POST(request: Request) {
     let numPatches: number = 5;
     let optimSteps: number = 250;
     let initial_positions: Array<[string, number, number]> | undefined;
+    let initial_colours: Array<[string, number, number, number]> | undefined;
     let imageBuffer: ArrayBuffer | undefined;
     let patch_url: string | undefined | null;
 
@@ -65,6 +67,12 @@ export async function POST(request: Request) {
       const initialPositionsStr = formData.get("initial_positions");
       if (initialPositionsStr && typeof initialPositionsStr === "string") {
         initial_positions = JSON.parse(initialPositionsStr);
+      }
+
+      // Get initial colors if available
+      const initialColoursStr = formData.get("initial_colours");
+      if (initialColoursStr && typeof initialColoursStr === "string") {
+        initial_colours = JSON.parse(initialColoursStr);
       }
 
       // Get the patch_url if available
@@ -83,6 +91,7 @@ export async function POST(request: Request) {
       numPatches = json.numPatches || 5;
       optimSteps = json.optimSteps || 250;
       initial_positions = json.initial_positions;
+      initial_colours = json.initial_colours;
       patch_url = json.patch_url;
     }
 
@@ -97,6 +106,7 @@ export async function POST(request: Request) {
       num_patches: validatedNumPatches,
       optim_steps: validatedOptimSteps,
       ...(initial_positions && { initial_positions }),
+      ...(initial_colours && { initial_colours }),
       ...(patch_url && { patch_url }),
     };
 
@@ -134,7 +144,7 @@ export async function POST(request: Request) {
 
     // Start prediction using the Replicate SDK
     const prediction = await replicate.predictions.create({
-      version: "efc7ea72d81d13e99a1a2ec5d40dbf9893e851f0a7363ef3e8e44f5a142e1aa2",
+      version: "c2405500b0f1671678ef21dab202ecb6ae5ad50d82628e169b3a0cd66a86c6ca",
       input,
     }) as PredictionWithError;
 

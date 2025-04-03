@@ -7,6 +7,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import toast from "react-hot-toast";
 import { PATCH_URL_PATTERN, type PatchLibrary as PatchLibraryType, LIBRARY_METADATA } from "./PatchLibrary";
+import { jsToPythonColor } from "@/lib/coordinateUtils";
 
 // Define the form schema using zod
 const formSchema = z.object({
@@ -69,6 +70,9 @@ type VectorGraphicsFormProps = {
       x: number;
       y: number;
       isDragging: boolean;
+      red?: number;
+      green?: number;
+      blue?: number;
     }>;
   };
   onPatchesVisualize?: (patches: ParsedPatch[]) => void;
@@ -237,8 +241,21 @@ export function VectorGraphicsForm({
         parseFloat(patch.y.toFixed(6))  // Ensure y is a float with proper precision
       ]) || [];
 
-      // Log the initial positions for debugging
+      // Format patches color data into initial_colours if available
+      const initial_colours = canvasData?.patches.map(patch => {
+        const filename = extractImageName(patch.src);
+        // Convert RGB values from 0-255 to 0-1 scale
+        // Use default values (0.0) if color information isn't available
+        const r = patch.red !== undefined ? jsToPythonColor(patch.red) : 0.0;
+        const g = patch.green !== undefined ? jsToPythonColor(patch.green) : 0.0;
+        const b = patch.blue !== undefined ? jsToPythonColor(patch.blue) : 0.0;
+
+        return [filename, r, g, b];
+      }) || [];
+
+      // Log the initial positions and colors for debugging
       console.log(`Sending ${initial_positions.length} initial positions:`, initial_positions);
+      console.log(`Sending ${initial_colours.length} initial colors:`, initial_colours);
       console.log(`Using patch URL: ${patchUrl}`);
 
       // Create form data for multipart/form-data if we have an image
@@ -261,6 +278,10 @@ export function VectorGraphicsForm({
           apiFormData.append("initial_positions", JSON.stringify(initial_positions));
         }
 
+        if (initial_colours.length > 0) {
+          apiFormData.append("initial_colours", JSON.stringify(initial_colours));
+        }
+
         requestBody = apiFormData;
         // Don't set Content-Type for FormData, browser will set it with boundary
       } else {
@@ -271,6 +292,7 @@ export function VectorGraphicsForm({
           numPatches: formData.numPatches,
           optimSteps: formData.optimSteps,
           initial_positions,
+          initial_colours,
           patch_url: patchUrl
         });
         headers["Content-Type"] = "application/json";
@@ -501,7 +523,7 @@ export function VectorGraphicsForm({
 
       setStatusMessage(`Created prediction with ID: ${prediction.id}. ${
         canvasData?.patches.length ?
-        `Including ${canvasData.patches.length} initial patch positions. ` :
+        `Including ${canvasData.patches.length} initial patch positions and colors. ` :
         ''
       }Waiting for processing...`);
 

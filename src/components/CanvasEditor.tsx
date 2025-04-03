@@ -62,6 +62,7 @@ export function CanvasEditor({ onCanvasDataChange, parsedPatches, selectedLibrar
       y: 0, // Center of canvas in our -1 to 1 coordinate system
       isDragging: false,
       library: patch.library,
+      alpha: 0.2, // Set default transparency to 0.2
     };
 
     let updatedPatches: PlacedPatch[];
