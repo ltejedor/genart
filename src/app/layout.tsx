@@ -5,6 +5,7 @@ import { Metadata } from "next";
 import { Toaster } from "react-hot-toast";
 
 import { TRPCReactProvider } from "@/trpc/react";
+import { BetaBanner } from "@/components/BetaBanner";
 
 export const metadata: Metadata = {
   title: "Mosaic by Mechifact",
@@ -28,6 +29,7 @@ export default function RootLayout({
             </div>
           </div>
         </header>
+        <BetaBanner />
         <TRPCReactProvider>
           {children}
           <Toaster />
