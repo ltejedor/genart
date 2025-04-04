@@ -20,9 +20,16 @@ export default function Home() {
     order?: number;
   }>>([]);
   const [selectedLibrary, setSelectedLibrary] = useState<PatchLibraryType>("animals");
+  const [backgroundColor, setBackgroundColor] = useState<string>("#000000");
 
   const handleCanvasDataChange = (data: CanvasData) => {
     setCanvasData(data);
+  };
+
+  const handleBackgroundColorChange = (color: string) => {
+    setBackgroundColor(color);
+    // Update canvasData with the new background color
+    setCanvasData(prev => ({ ...prev, backgroundColor: color }));
   };
 
   const handlePatchesVisualize = (patches: Array<{
@@ -58,6 +65,24 @@ export default function Home() {
                 selectedLibrary={selectedLibrary}
                 onLibraryChange={handleLibraryChange}
               />
+              
+              {/* Background Color Picker */}
+              <div className="mt-6 border-t border-gray-200 pt-4">
+                <h3 className="text-lg font-medium mb-3">Canvas Background</h3>
+                <div className="flex items-center space-x-3">
+                  <label htmlFor="bg-color" className="text-sm text-gray-700">
+                    Color:
+                  </label>
+                  <input
+                    id="bg-color"
+                    type="color"
+                    value={backgroundColor}
+                    onChange={(e) => handleBackgroundColorChange(e.target.value)}
+                    className="h-8 w-10 cursor-pointer rounded border border-gray-300"
+                  />
+                  <span className="text-sm text-gray-500">{backgroundColor}</span>
+                </div>
+              </div>
             </div>
           </div>
 
@@ -68,6 +93,8 @@ export default function Home() {
               parsedPatches={parsedPatches}
               selectedLibrary={selectedLibrary}
               onLibraryChange={handleLibraryChange}
+              backgroundColor={backgroundColor}
+              onBackgroundColorChange={handleBackgroundColorChange}
             />
           </div>
 

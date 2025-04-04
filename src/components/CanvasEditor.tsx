@@ -8,6 +8,7 @@ import toast from "react-hot-toast";
 
 export type CanvasData = {
   patches: PlacedPatch[];
+  backgroundColor?: string;
 };
 
 type CanvasEditorProps = {
@@ -29,9 +30,18 @@ type CanvasEditorProps = {
   }>;
   selectedLibrary?: PatchLibraryType;
   onLibraryChange?: (library: PatchLibraryType) => void;
+  backgroundColor?: string;
+  onBackgroundColorChange?: (color: string) => void;
 };
 
-export function CanvasEditor({ onCanvasDataChange, parsedPatches, selectedLibrary = "animals", onLibraryChange }: CanvasEditorProps) {
+export function CanvasEditor({ 
+  onCanvasDataChange, 
+  parsedPatches, 
+  selectedLibrary = "animals", 
+  onLibraryChange,
+  backgroundColor = "#000000",
+  onBackgroundColorChange
+}: CanvasEditorProps) {
   const [placedPatches, setPlacedPatches] = useState<PlacedPatch[]>([]);
   const [selectedPatch, setSelectedPatch] = useState<PlacedPatch | null>(null);
 
@@ -78,7 +88,7 @@ export function CanvasEditor({ onCanvasDataChange, parsedPatches, selectedLibrar
     }
 
     setPlacedPatches(updatedPatches);
-    onCanvasDataChange({ patches: updatedPatches });
+    onCanvasDataChange({ patches: updatedPatches, backgroundColor });
   };
 
   // Handle patch selection from the canvas
@@ -92,7 +102,7 @@ export function CanvasEditor({ onCanvasDataChange, parsedPatches, selectedLibrar
       p.id === updatedPatch.id ? updatedPatch : p
     );
     setPlacedPatches(updatedPatches);
-    onCanvasDataChange({ patches: updatedPatches });
+    onCanvasDataChange({ patches: updatedPatches, backgroundColor });
 
     // Update selected patch if it's the one being modified
     if (selectedPatch && selectedPatch.id === updatedPatch.id) {
@@ -106,7 +116,7 @@ export function CanvasEditor({ onCanvasDataChange, parsedPatches, selectedLibrar
     // This prevents unnecessary re-renders and infinite loops
     if (JSON.stringify(patches) !== JSON.stringify(placedPatches)) {
       setPlacedPatches(patches);
-      onCanvasDataChange({ patches });
+      onCanvasDataChange({ patches, backgroundColor });
 
       // Update selected patch if it's still in the patches array
       if (selectedPatch) {
@@ -114,6 +124,14 @@ export function CanvasEditor({ onCanvasDataChange, parsedPatches, selectedLibrar
         setSelectedPatch(updatedSelectedPatch || null);
       }
     }
+  };
+
+  // Handle background color change
+  const handleBackgroundColorChange = (color: string) => {
+    if (onBackgroundColorChange) {
+      onBackgroundColorChange(color);
+    }
+    onCanvasDataChange({ patches: placedPatches, backgroundColor: color });
   };
 
   // Handle parsed patches from props
@@ -136,6 +154,8 @@ export function CanvasEditor({ onCanvasDataChange, parsedPatches, selectedLibrar
           onPatchSelect={handlePatchSelect}
           onPatchUpdate={handlePatchUpdate}
           placedPatchesFromProps={placedPatches}
+          backgroundColor={backgroundColor}
+          onBackgroundColorChange={handleBackgroundColorChange}
         />
       </div>
 

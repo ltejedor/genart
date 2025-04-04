@@ -74,6 +74,7 @@ type VectorGraphicsFormProps = {
       green?: number;
       blue?: number;
     }>;
+    backgroundColor?: string;
   };
   onPatchesVisualize?: (patches: ParsedPatch[]) => void;
   selectedLibrary?: PatchLibraryType;
@@ -85,6 +86,20 @@ const extractImageName = (src: string): string => {
   // Extract just the filename from the path
   const filename = src.split('/').pop() || '';
   return filename;
+};
+
+// Helper function to convert hex color to RGB components
+const hexToRgb = (hex: string): { r: number; g: number; b: number } => {
+  // Remove the # if present
+  hex = hex.replace(/^#/, '');
+  
+  // Parse the hex values
+  const bigint = parseInt(hex, 16);
+  const r = (bigint >> 16) & 255;
+  const g = (bigint >> 8) & 255;
+  const b = bigint & 255;
+  
+  return { r, g, b };
 };
 
 // Helper function to determine the active library from canvas data
@@ -253,10 +268,15 @@ export function VectorGraphicsForm({
         return [filename, r, g, b];
       }) || [];
 
+      // Extract background color
+      const backgroundColor = canvasData?.backgroundColor || "#000000";
+      const { r: bgRed, g: bgGreen, b: bgBlue } = hexToRgb(backgroundColor);
+
       // Log the initial positions and colors for debugging
       console.log(`Sending ${initial_positions.length} initial positions:`, initial_positions);
       console.log(`Sending ${initial_colours.length} initial colors:`, initial_colours);
       console.log(`Using patch URL: ${patchUrl}`);
+      console.log(`Background color: R:${bgRed}, G:${bgGreen}, B:${bgBlue}`);
 
       // Create form data for multipart/form-data if we have an image
       let requestBody;
@@ -273,6 +293,9 @@ export function VectorGraphicsForm({
         apiFormData.append("optimSteps", formData.optimSteps.toString());
         apiFormData.append("image", formData.image);
         apiFormData.append("patch_url", patchUrl);
+        apiFormData.append("background_red", bgRed.toString());
+        apiFormData.append("background_green", bgGreen.toString());
+        apiFormData.append("background_blue", bgBlue.toString());
 
         if (initial_positions.length > 0) {
           apiFormData.append("initial_positions", JSON.stringify(initial_positions));
@@ -293,7 +316,10 @@ export function VectorGraphicsForm({
           optimSteps: formData.optimSteps,
           initial_positions,
           initial_colours,
-          patch_url: patchUrl
+          patch_url: patchUrl,
+          background_red: bgRed,
+          background_green: bgGreen,
+          background_blue: bgBlue
         });
         headers["Content-Type"] = "application/json";
       }

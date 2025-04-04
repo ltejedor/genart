@@ -47,6 +47,8 @@ type InteractiveCanvasProps = {
   onPatchSelect?: (patch: PlacedPatch | null) => void;
   onPatchUpdate?: (patch: PlacedPatch) => void;
   placedPatchesFromProps?: PlacedPatch[];
+  backgroundColor?: string;
+  onBackgroundColorChange?: (color: string) => void;
 };
 
 export function InteractiveCanvas({
@@ -54,7 +56,9 @@ export function InteractiveCanvas({
   parsedPatches,
   onPatchSelect,
   onPatchUpdate,
-  placedPatchesFromProps
+  placedPatchesFromProps,
+  backgroundColor = "#000000",
+  onBackgroundColorChange
 }: InteractiveCanvasProps) {
   const [stageSize, setStageSize] = useState({ width: 500, height: 500 });
   const [placedPatches, setPlacedPatches] = useState<PlacedPatch[]>([]);
@@ -388,7 +392,7 @@ export function InteractiveCanvas({
                 y={0}
                 width={stageSize.width}
                 height={stageSize.height}
-                fill="#f9fafb"
+                fill={backgroundColor}
               />
 
               {/* Grid lines */}

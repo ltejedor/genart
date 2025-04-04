@@ -23,6 +23,9 @@ interface RequestBody {
   initial_colours?: Array<[string, number, number, number]>;
   image?: File;
   patch_url?: string;
+  background_red?: number;
+  background_green?: number;
+  background_blue?: number;
 }
 
 interface PredictionWithError extends Prediction {
@@ -54,6 +57,9 @@ export async function POST(request: Request) {
     let initial_colours: Array<[string, number, number, number]> | undefined;
     let imageBuffer: ArrayBuffer | undefined;
     let patch_url: string | undefined | null;
+    let background_red: number = 0;
+    let background_green: number = 0;
+    let background_blue: number = 0;
 
     if (contentType.includes("multipart/form-data")) {
       // Handle form data with image upload
@@ -78,6 +84,11 @@ export async function POST(request: Request) {
       // Get the patch_url if available
       patch_url = formData.get("patch_url") as string | null;
 
+      // Get background color values
+      background_red = parseInt(formData.get("background_red") as string) || 0;
+      background_green = parseInt(formData.get("background_green") as string) || 0;
+      background_blue = parseInt(formData.get("background_blue") as string) || 0;
+
       // Get the image file
       const imageFile = formData.get("image") as File | null;
       if (imageFile) {
@@ -93,6 +104,9 @@ export async function POST(request: Request) {
       initial_positions = json.initial_positions;
       initial_colours = json.initial_colours;
       patch_url = json.patch_url;
+      background_red = json.background_red || 0;
+      background_green = json.background_green || 0;
+      background_blue = json.background_blue || 0;
     }
 
     // Validate numPatches is within reasonable limits
@@ -108,6 +122,9 @@ export async function POST(request: Request) {
       ...(initial_positions && { initial_positions }),
       ...(initial_colours && { initial_colours }),
       ...(patch_url && { patch_url }),
+      background_red,
+      background_green,
+      background_blue,
     };
 
     let input;
