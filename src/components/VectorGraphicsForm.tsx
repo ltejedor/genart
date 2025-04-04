@@ -574,8 +574,8 @@ export function VectorGraphicsForm({
     <>
       <div className="w-full space-y-6">
         <div>
-          <h2 className="text-xl font-semibold mb-2 text-blue-600">Create Mosaic</h2>
-          <p className="text-sm text-slate-600 mb-4">
+          <h2 className="text-xl font-semibold mb-2 text-black">Create Mosaic</h2>
+          <p className="text-sm text-gray-600 mb-4">
             Generate patches using AI and arrange them to create your mosaic
           </p>
         </div>
@@ -586,8 +586,8 @@ export function VectorGraphicsForm({
             onClick={() => handleModeChange("text")}
             className={`flex-1 py-2 px-4 rounded-md transition-colors ${
               currentMode === "text"
-                ? "bg-blue-600 text-white"
-                : "bg-slate-100 text-slate-700 hover:bg-slate-200"
+                ? "bg-black text-white"
+                : "bg-gray-100 text-gray-700 hover:bg-gray-200"
             }`}
             disabled={isGenerating}
           >
@@ -598,8 +598,8 @@ export function VectorGraphicsForm({
             onClick={() => handleModeChange("image")}
             className={`flex-1 py-2 px-4 rounded-md transition-colors ${
               currentMode === "image"
-                ? "bg-blue-600 text-white"
-                : "bg-slate-100 text-slate-700 hover:bg-slate-200"
+                ? "bg-black text-white"
+                : "bg-gray-100 text-gray-700 hover:bg-gray-200"
             }`}
             disabled={isGenerating}
           >
@@ -614,7 +614,7 @@ export function VectorGraphicsForm({
             <div>
               <label
                 htmlFor="prompt"
-                className="block text-sm font-medium text-slate-700"
+                className="block text-sm font-medium text-gray-700"
               >
                 Prompt
               </label>
@@ -636,7 +636,7 @@ export function VectorGraphicsForm({
             <div>
               <label
                 htmlFor="image"
-                className="block text-sm font-medium text-slate-700"
+                className="block text-sm font-medium text-gray-700"
               >
                 Upload Reference Image
               </label>
@@ -695,7 +695,7 @@ export function VectorGraphicsForm({
         <div>
           <label
             htmlFor="librarySelect"
-            className="block text-sm font-medium text-slate-700 mb-1"
+            className="block text-sm font-medium text-gray-700 mb-1"
           >
             Patch Library
           </label>
@@ -712,7 +712,7 @@ export function VectorGraphicsForm({
               </option>
             ))}
           </select>
-          <p className="mt-1 text-xs text-slate-500">
+          <p className="mt-1 text-xs text-gray-500">
             Select which patch library to use for generation
           </p>
         </div>
@@ -720,7 +720,7 @@ export function VectorGraphicsForm({
           <div>
             <label
               htmlFor="numPatches"
-              className="block text-sm font-medium text-slate-700"
+              className="block text-sm font-medium text-gray-700"
             >
               Number of Patches (1-250)
             </label>
@@ -745,7 +745,7 @@ export function VectorGraphicsForm({
           <div>
             <label
               htmlFor="optimSteps"
-              className="block text-sm font-medium text-slate-700"
+              className="block text-sm font-medium text-gray-700"
             >
               Optimization Steps (1-15,000)
             </label>
@@ -770,13 +770,13 @@ export function VectorGraphicsForm({
             {errors.optimSteps && (
               <p className="mt-1 text-sm text-red-600">{errors.optimSteps.message}</p>
             )}
-            <p className="mt-1 text-xs text-slate-500">
+            <p className="mt-1 text-xs text-gray-500">
               Higher values may produce better results but take longer to generate. Recommended range: 100-1000.
             </p>
           </div>
 
           {canvasData && canvasData.patches.length > 0 && (
-            <div className="rounded-md bg-blue-50 p-2 text-sm text-blue-700">
+            <div className="rounded-md bg-gray-50 p-2 text-sm text-gray-700 border border-gray-200">
               <p className="font-medium">Canvas Data</p>
               <p>{canvasData.patches.length} patches will be included in the generation</p>
               <p className="text-xs mt-1">Patch positions will be sent to the AI model to influence the generated result</p>
@@ -786,21 +786,21 @@ export function VectorGraphicsForm({
           <button
             type="submit"
             disabled={isGenerating || (currentMode === "image" && !imagePreview) || (currentMode === "text" && !watch("prompt"))}
-            className="w-full rounded-md bg-blue-600 px-4 py-2 text-white hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:bg-slate-400 transition-colors"
+            className="w-full rounded-md bg-[#ff0084] px-4 py-2 text-white hover:bg-[#e5007a] focus:outline-none focus:ring-2 focus:ring-[#ff0084] focus:ring-offset-2 disabled:bg-gray-400 transition-colors"
           >
             {isGenerating ? "Generating..." : "Generate Mosaic"}
           </button>
         </form>
 
         {statusMessage && (
-          <div className="mt-4 p-3 bg-slate-50 border border-slate-200 rounded-md text-sm">
-            <p className="font-medium text-slate-700">Status:</p>
-            <p className="text-slate-600">{statusMessage}</p>
+          <div className="mt-4 p-3 bg-gray-50 border border-gray-200 rounded-md text-sm">
+            <p className="font-medium text-gray-700">Status:</p>
+            <p className="text-gray-600">{statusMessage}</p>
 
             {predictionId && !generatedResults.length && (
               <button
                 onClick={checkStatus}
-                className="mt-2 text-blue-600 hover:text-blue-800 text-sm font-medium"
+                className="mt-2 text-[#ff0084] hover:text-[#e5007a] text-sm font-medium"
               >
                 Check Status Manually
               </button>
@@ -809,7 +809,7 @@ export function VectorGraphicsForm({
         )}
 
         {parsedPatches.length > 0 && (
-          <div className="mt-4 p-3 bg-green-50 border border-green-200 rounded-md text-sm text-green-700">
+          <div className="mt-4 p-3 bg-gray-50 border border-gray-200 rounded-md text-sm text-gray-700">
             <p className="font-medium">Patches Visualized:</p>
             <p>{parsedPatches.length} patches placed on canvas</p>
           </div>
@@ -823,18 +823,18 @@ export function VectorGraphicsForm({
             {[...generatedResults].reverse().map((pair, index) => {
               const [imageUrl, jsonUrl] = pair;
               return (
-                <div key={index} className="overflow-hidden rounded-lg border border-slate-200 shadow-sm">
+                <div key={index} className="overflow-hidden rounded-lg border border-gray-200 shadow-sm">
                   <img
                     src={imageUrl}
                     alt={`Generated mosaic ${index + 1}`}
                     className="w-full"
                   />
-                  <div className="p-3 bg-slate-50 border-t border-slate-200 flex justify-between items-center">
+                  <div className="p-3 bg-gray-50 border-t border-gray-200 flex justify-between items-center">
                     <a
                       href={jsonUrl}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="text-xs text-blue-600 hover:text-blue-800"
+                      className="text-xs text-[#ff0084] hover:text-[#e5007a]"
                     >
                       View JSON data
                     </a>
@@ -859,7 +859,7 @@ export function VectorGraphicsForm({
                           }
                         }}
                         disabled={isVisualizing}
-                        className="text-xs bg-blue-50 text-blue-700 px-2 py-1 rounded hover:bg-blue-100 disabled:opacity-50 transition-colors"
+                        className="text-xs bg-gray-100 text-[#ff0084] px-2 py-1 rounded hover:bg-gray-200 disabled:opacity-50 transition-colors"
                       >
                         {isVisualizing ? "Visualizing..." : "Apply to Canvas"}
                       </button>

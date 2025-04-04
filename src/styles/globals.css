@@ -3,45 +3,49 @@
 @tailwind utilities;
 
 :root {
-  --color-primary: #2563eb;
-  --color-primary-dark: #1d4ed8;
-  --color-secondary: #0ea5e9;
-  --color-accent: #8b5cf6;
-  --color-background: #f8fafc;
+  --color-primary: #000000;
+  --color-primary-dark: #111111;
+  --color-secondary: #333333;
+  --color-accent: #ff0084;
+  --color-background: #f9f9f9;
   --color-card: #ffffff;
-  --color-text: #1e293b;
-  --color-text-light: #64748b;
-  --color-border: #e2e8f0;
+  --color-text: #111111;
+  --color-text-light: #666666;
+  --color-border: #e0e0e0;
 }
 
 @layer base {
   body {
-    @apply bg-slate-50 text-slate-800;
+    @apply bg-gray-50 text-gray-900;
   }
   
   h1, h2, h3, h4, h5, h6 {
-    @apply font-bold text-slate-900;
+    @apply font-bold text-black;
   }
 }
 
 @layer components {
   .mosaic-card {
-    @apply bg-white rounded-lg border border-slate-200 shadow-sm hover:shadow-md transition-shadow duration-200;
+    @apply bg-white rounded-lg border border-gray-200 shadow-sm hover:shadow-md transition-shadow duration-200;
   }
   
   .mosaic-button-primary {
-    @apply bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-4 rounded-md transition-colors duration-200;
+    @apply bg-black hover:bg-gray-800 text-white font-medium py-2 px-4 rounded-md transition-colors duration-200;
   }
   
   .mosaic-button-secondary {
-    @apply bg-slate-100 hover:bg-slate-200 text-slate-800 font-medium py-2 px-4 rounded-md transition-colors duration-200;
+    @apply bg-gray-100 hover:bg-gray-200 text-gray-800 font-medium py-2 px-4 rounded-md transition-colors duration-200;
+  }
+  
+  .mosaic-button-accent {
+    @apply bg-[#ff0084] hover:bg-[#e5007a] text-white font-medium py-2 px-4 rounded-md transition-colors duration-200;
   }
   
   .mosaic-input {
-    @apply rounded-md border border-slate-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent;
+    @apply rounded-md border border-gray-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-[#ff0084] focus:border-transparent;
   }
   
   .mosaic-beta-banner {
-    @apply bg-gradient-to-r from-blue-600 to-purple-600 text-white py-3 px-4 shadow-md relative;
+    @apply bg-black text-white py-3 px-4 shadow-md relative;
   }
 }

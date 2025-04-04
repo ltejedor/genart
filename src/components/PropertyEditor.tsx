@@ -202,7 +202,7 @@ export function PropertyEditor({ selectedPatch, onPatchUpdate }: PropertyEditorP
               step="1"
               value={red}
               onChange={(e) => handlePropertyChange("red", parseFloat(e.target.value))}
-              className="w-full accent-blue-500"
+              className="w-full accent-[#ff0084]"
             />
           </div>
 
@@ -215,7 +215,7 @@ export function PropertyEditor({ selectedPatch, onPatchUpdate }: PropertyEditorP
               step="1"
               value={green}
               onChange={(e) => handlePropertyChange("green", parseFloat(e.target.value))}
-              className="w-full accent-blue-500"
+              className="w-full accent-[#ff0084]"
             />
           </div>
 
@@ -228,7 +228,7 @@ export function PropertyEditor({ selectedPatch, onPatchUpdate }: PropertyEditorP
               step="1"
               value={blue}
               onChange={(e) => handlePropertyChange("blue", parseFloat(e.target.value))}
-              className="w-full accent-blue-500"
+              className="w-full accent-[#ff0084]"
             />
           </div>
 
@@ -241,7 +241,7 @@ export function PropertyEditor({ selectedPatch, onPatchUpdate }: PropertyEditorP
               step="0.1"
               value={alpha}
               onChange={(e) => handlePropertyChange("alpha", parseFloat(e.target.value))}
-              className="w-full accent-blue-500"
+              className="w-full accent-[#ff0084]"
             />
           </div>
         </div>

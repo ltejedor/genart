@@ -324,19 +324,6 @@ export function InteractiveCanvas({
     }
   };
 
-  // Update a patch's properties
-  const updatePatch = (updatedPatch: PlacedPatch) => {
-    internalUpdate.current = true;
-    setPlacedPatches(prev =>
-      prev.map(p => (p.id === updatedPatch.id ? updatedPatch : p))
-    );
-
-    // Call the onPatchUpdate prop if provided
-    if (onPatchUpdate) {
-      onPatchUpdate(updatedPatch);
-    }
-  };
-
   // Handle dropping a patch from the library onto the canvas
   const handleDrop = (e: React.DragEvent<HTMLDivElement>) => {
     e.preventDefault();
@@ -497,7 +484,7 @@ export function InteractiveCanvas({
                     onClick={() => handlePatchSelect(patch.id)}
                     onTap={() => handlePatchSelect(patch.id)}
                     opacity={selectedPatchId === patch.id ? 1 : 0.75}
-                    stroke={selectedPatchId === patch.id ? "#3b82f6" : undefined}
+                    stroke={selectedPatchId === patch.id ? "#ff0084" : undefined}
                     strokeWidth={selectedPatchId === patch.id ? 2 : 0}
                   >
                     <KonvaImage
@@ -533,7 +520,7 @@ export function InteractiveCanvas({
           {selectedPatchId && (
             <button
               onClick={() => removePatch(selectedPatchId)}
-              className="rounded-md bg-red-100 px-2 py-1 text-xs text-red-700 hover:bg-red-200"
+              className="rounded-md bg-gray-100 px-2 py-1 text-xs text-gray-700 hover:bg-gray-200"
             >
               Remove Selected
             </button>
@@ -544,7 +531,7 @@ export function InteractiveCanvas({
               setPlacedPatches([]);
               setSelectedPatchId(null);
             }}
-            className="rounded-md bg-red-100 px-2 py-1 text-xs text-red-700 hover:bg-red-200"
+            className="rounded-md bg-gray-100 px-2 py-1 text-xs text-gray-700 hover:bg-gray-200"
           >
             Clear Canvas
           </button>

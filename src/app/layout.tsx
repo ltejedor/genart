@@ -19,16 +19,8 @@ export default function RootLayout({
   children,
 }: Readonly<{ children: React.ReactNode }>) {
   return (
-    <html lang="en" className={`${GeistSans.variable} bg-slate-50`}>
+    <html lang="en" className={`${GeistSans.variable} bg-gray-50`}>
       <body>
-        <header className="border-b border-slate-200 bg-white py-4">
-          <div className="container mx-auto px-4 flex items-center">
-            <div className="flex items-center">
-              <img src="/logo.svg" alt="Mosaic by Mechifact" className="h-8 w-8 mr-2" />
-              <span className="text-xl font-bold text-blue-600">Mosaic by Mechifact</span>
-            </div>
-          </div>
-        </header>
         <BetaBanner />
         <TRPCReactProvider>
           {children}

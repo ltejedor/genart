@@ -74,7 +74,7 @@ export default function Home() {
           {/* Right Column - Results Display */}
           <div className="lg:col-span-4">
             <div className="mosaic-card p-4">
-              <h2 className="text-xl font-semibold mb-4 text-blue-600">Generated Results</h2>
+              <h2 className="text-xl font-semibold mb-4">Generated Results</h2>
               <div id="results-container">
                 {/* Results will be displayed here by the VectorGraphicsForm component */}
               </div>

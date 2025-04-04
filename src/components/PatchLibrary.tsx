@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import Image from "next/image";
-import { Tab } from "@headlessui/react";
+import { TabList, TabGroup, Tab } from "@headlessui/react";
 
 // Define the available patch libraries
 export type PatchLibrary = "animals" | "handwritten_mnist" | "shore_glass" | "fruit";
@@ -85,29 +85,29 @@ export function PatchLibrary({ onPatchSelect, selectedLibrary, onLibraryChange }
   return (
     <div className="w-full">
 
-      <Tab.Group
+      <TabGroup
         selectedIndex={selectedIndex}
         onChange={(index) => {
           const libraries = Object.keys(LIBRARY_METADATA) as PatchLibrary[];
           handleLibraryChange(libraries[index]);
         }}
       >
-        <Tab.List className="flex space-x-1 rounded-xl bg-blue-900/10 p-1 mb-3">
+        <TabList className="flex space-x-1 rounded-xl bg-gray-100 p-1 mb-3">
           {Object.entries(LIBRARY_METADATA).map(([key, library]) => (
             <Tab
               key={key}
               className={({ selected }) =>
                 `w-full rounded-lg py-2 text-sm font-medium leading-5
                 ${selected
-                  ? 'bg-white text-blue-700 shadow'
-                  : 'text-gray-600 hover:bg-white/[0.12] hover:text-blue-600'}`
+                  ? 'bg-black text-white shadow'
+                  : 'text-gray-600 hover:bg-gray-200 hover:text-gray-900'}`
               }
             >
               {library.displayName}
             </Tab>
           ))}
-        </Tab.List>
-      </Tab.Group>
+        </TabList>
+      </TabGroup>
 
       {isLoading ? (
         <div className="flex h-40 items-center justify-center">
@@ -118,7 +118,7 @@ export function PatchLibrary({ onPatchSelect, selectedLibrary, onLibraryChange }
           {patches.map((patch) => (
             <div
               key={patch.id}
-              className="relative aspect-square cursor-pointer overflow-hidden rounded-md border border-gray-300 bg-white p-1 transition-all hover:border-indigo-500 hover:shadow-md"
+              className="relative aspect-square cursor-pointer overflow-hidden rounded-md border border-gray-300 bg-white p-1 transition-all hover:border-[#ff0084] hover:shadow-md"
               onClick={() => onPatchSelect(patch)}
               draggable
               onDragStart={(e) => {

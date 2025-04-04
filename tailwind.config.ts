@@ -8,6 +8,11 @@ export default {
       fontFamily: {
         sans: ["var(--font-geist-sans)", ...fontFamily.sans],
       },
+      colors: {
+        accent: {
+          pink: "#ff0084",
+        },
+      },
     },
   },
   plugins: [],
